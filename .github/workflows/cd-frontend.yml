@@ -21,4 +21,5 @@ jobs:
       service_name: frontend
       context: ./frontend
       image_name: ${{ github.repository }}-frontend
+      project_name: ${{ github.event.repository.name }}
     secrets: inherit

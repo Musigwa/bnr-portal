@@ -21,4 +21,5 @@ jobs:
       service_name: backend
       context: ./backend
       image_name: ${{ github.repository }}-backend
+      project_name: ${{ github.event.repository.name }}
     secrets: inherit
