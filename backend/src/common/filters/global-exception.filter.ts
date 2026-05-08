@@ -24,6 +24,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         ? exception.getResponse()
         : 'Internal server error';
 
+    if (status === 500) {
+      console.error('Unhandled Exception:', exception);
+    }
+
     response.status(status).json({
       statusCode: status,
       message:

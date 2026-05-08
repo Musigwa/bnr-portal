@@ -1,26 +1,25 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { apiClient } from '@/lib/api-client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { FieldErrors, ResolverResult, useForm, useWatch } from 'react-hook-form';
+import * as z from 'zod';
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Check, Loader2, Upload } from 'lucide-react';
 
 const formSchema = z.object({
   institutionName: z.string().min(1, 'Institution name is required'),
   institutionType: z.string().min(1, 'Institution type is required'),
   registrationNumber: z.string().min(1, 'Registration number is required'),
-  proposedCapital: z.coerce.number().min(1, 'Proposed capital must be greater than 0'),
+  proposedCapital: z.number().min(1, 'Proposed capital must be greater than 0'),
   applicantNotes: z.string().optional(),
 });
 
@@ -43,12 +42,28 @@ export default function NewApplicationPage() {
 
   const {
     register,
-    handleSubmit,
     setValue,
-    watch,
+    getValues,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: async (values) => {
+      const result = formSchema.safeParse(values);
+      if (result.success) {
+        return { values: result.data, errors: {} };
+      }
+      
+      const errors: Record<string, { type: string; message: string }> = {};
+      result.error.issues.forEach((issue) => {
+        const path = issue.path.join('.');
+        errors[path] = {
+          type: issue.code,
+          message: issue.message,
+        };
+      });
+      
+      return { values: {}, errors: errors as unknown as FieldErrors<FormValues> } as ResolverResult<FormValues>;
+    },
     defaultValues: {
       institutionName: '',
       institutionType: '',
@@ -58,15 +73,24 @@ export default function NewApplicationPage() {
     },
   });
 
-  const formValues = watch();
+  const institutionType = useWatch({ control, name: 'institutionType' });
 
   // Mutation to create or update draft
   const saveDraftMutation = useMutation({
     mutationFn: async (data: FormValues) => {
-      if (applicationId) {
-        return apiClient.patch(`/applications/${applicationId}`, data);
+      const cleanedData: Partial<FormValues> = { ...data };
+      // Ensure proposedCapital is a valid number or remove it if it's NaN/empty
+      const capital = Number(cleanedData.proposedCapital);
+      if (isNaN(capital)) {
+        delete cleanedData.proposedCapital;
       } else {
-        const res = await apiClient.post<{ id: string }>('/applications', data);
+        cleanedData.proposedCapital = capital;
+      }
+      
+      if (applicationId) {
+        return apiClient.patch(`/applications/${applicationId}`, cleanedData);
+      } else {
+        const res = await apiClient.post<{ id: string }>('/applications', cleanedData);
         setApplicationId(res.id);
         return res;
       }
@@ -89,9 +113,9 @@ export default function NewApplicationPage() {
     // Save draft on step navigation
     if (currentStep === 1 || currentStep === 2) {
       try {
-        await saveDraftMutation.mutateAsync(formValues);
-      } catch (error: any) {
-        console.error('Failed to save draft', error.message || error);
+        await saveDraftMutation.mutateAsync(getValues());
+      } catch (error: unknown) {
+        console.error('Failed to save draft', error instanceof Error ? error.message : error);
         return; // Don't proceed if save fails
       }
     }
@@ -221,8 +245,8 @@ export default function NewApplicationPage() {
               <div className="space-y-2">
                 <Label htmlFor="institutionType">Institution Type</Label>
                 <Select
-                  onValueChange={(value) => setValue('institutionType', value)}
-                  value={watch('institutionType')}
+                  onValueChange={(value) => setValue('institutionType', value ?? '')}
+                  value={institutionType ?? undefined}
                 >
                   <SelectTrigger className={errors.institutionType ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select type" />
@@ -261,7 +285,7 @@ export default function NewApplicationPage() {
                   id="proposedCapital"
                   type="number"
                   placeholder="e.g. 5000000"
-                  {...register('proposedCapital')}
+                  {...register('proposedCapital', { valueAsNumber: true })}
                   className={errors.proposedCapital ? 'border-red-500' : ''}
                 />
                 {errors.proposedCapital && (
@@ -348,23 +372,23 @@ export default function NewApplicationPage() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Institution Name</p>
-                  <p className="font-medium">{formValues.institutionName}</p>
+                  <p className="font-medium">{getValues().institutionName}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Institution Type</p>
-                  <p className="font-medium capitalize">{formValues.institutionType.toLowerCase().replace('_', ' ')}</p>
+                  <p className="font-medium capitalize">{getValues().institutionType?.toLowerCase().replace('_', ' ')}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Registration Number</p>
-                  <p className="font-medium">{formValues.registrationNumber}</p>
+                  <p className="font-medium">{getValues().registrationNumber}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Proposed Capital</p>
-                  <p className="font-medium">{formValues.proposedCapital} RWF</p>
+                  <p className="font-medium">{getValues().proposedCapital} RWF</p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-muted-foreground">Notes</p>
-                  <p className="font-medium">{formValues.applicantNotes || 'No notes provided'}</p>
+                  <p className="font-medium">{getValues().applicantNotes || 'No notes provided'}</p>
                 </div>
               </div>
 
