@@ -1,0 +1,38 @@
+enum ApplicationStatus {
+    DRAFT
+    SUBMITTED
+    UNDER_REVIEW
+    PENDING_INFO
+    REVIEWED
+    APPROVED
+    REJECTED
+}
+
+model Application {
+    id        String            @id @default(uuid())
+    refNumber String            @unique
+    status    ApplicationStatus @default(DRAFT)
+    version   Int               @default(1)
+
+    applicantId String
+    applicant   User   @relation("ApplicantApplications", fields: [applicantId], references: [id])
+
+    reviewerId String?
+    reviewer   User?   @relation("ReviewerApplications", fields: [reviewerId], references: [id])
+
+    institutionName    String
+    institutionType    String
+    registrationNumber String?
+    proposedCapital    Decimal?
+    applicantNotes     String?
+    reviewerNotes      String?
+    rejectionReason    String?
+
+    documents Document[]
+    auditLogs AuditLog[]
+
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    submittedAt DateTime?
+    decidedAt   DateTime?
+}
