@@ -3,6 +3,9 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
+COPY prisma.config.ts ./
+COPY prisma ./prisma/
+COPY src/utils/db-url.generator.ts ./src/utils/db-url.generator.ts
 RUN npm install -g pnpm
 RUN pnpm install --frozen-lockfile
 
