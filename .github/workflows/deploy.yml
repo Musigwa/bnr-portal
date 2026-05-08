@@ -70,6 +70,7 @@ jobs:
         run: |
           chmod +x .github/scripts/generate-env.sh
           ./.github/scripts/generate-env.sh
+          chmod 644 .env.production
 
       - name: Copy deploy script to VPS
         uses: appleboy/scp-action@v0.1.7
