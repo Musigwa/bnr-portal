@@ -32,6 +32,9 @@ export class PrismaService
 
   async onModuleInit() {
     await this.$connect();
+    // Facilitate the ref number generation
+    await this
+      .$queryRaw`CREATE SEQUENCE IF NOT EXISTS application_ref_seq START 1`;
     console.log('✅ Database connected successfully');
   }
 
