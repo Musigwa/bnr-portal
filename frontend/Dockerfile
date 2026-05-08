@@ -8,7 +8,6 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 RUN pnpm run build
-RUN npx esbuild prisma.config.ts --bundle --platform=node --format=cjs --outfile=prisma.config.js --footer:js="module.exports = module.exports.default || module.exports;"
 
 # Stage 2 — Run
 FROM node:20-alpine AS runner
@@ -16,14 +15,16 @@ WORKDIR /app
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY --from=builder /app/dist ./dist
+# Copy built files and node_modules
+COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.js ./prisma.config.js
+COPY --from=builder /app/public ./public
 
-RUN mkdir -p uploads && chown -R appuser:appgroup /app
+RUN chown -R appuser:appgroup /app
 
 USER appuser
 
-CMD ["npm", "run", "start"]
+EXPOSE 3000
+
+CMD ["npx", "next", "start"]

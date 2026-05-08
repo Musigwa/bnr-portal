@@ -4,9 +4,9 @@ export const generateDatabaseUrl = (dbNameOverride?: string): string => {
     return process.env.DB_URL;
   }
 
-  const host = process.env.DB_HOST;
+  const host = process.env.DB_HOST || 'localhost';
   const port = process.env.DB_PORT || '5432';
-  const user = process.env.DB_USERNAME;
+  const user = process.env.DB_USERNAME || process.env.DB_USER;
   const password = process.env.DB_PASSWORD;
   const dbName = dbNameOverride || process.env.DB_NAME;
   const ssl = process.env.DB_SSL === 'true';
