@@ -4,7 +4,7 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import { Role, User } from '@prisma/client';
+import { Role, User, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -62,5 +62,25 @@ export class UsersService {
 
   async validatePassword(user: User, password: string): Promise<boolean> {
     return bcrypt.compare(password, user.passwordHash);
+  }
+
+  async update(
+    id: string,
+    data: { fullName?: string; password?: string },
+  ): Promise<Omit<User, 'passwordHash'>> {
+    await this.findById(id); // throws if not found
+
+    const updateData: Prisma.UserUpdateInput = {};
+    if (data.fullName) updateData.fullName = data.fullName;
+    if (data.password)
+      updateData.passwordHash = await bcrypt.hash(data.password, 12);
+
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: updateData,
+    });
+
+    const { passwordHash: _, ...result } = user;
+    return result;
   }
 }
