@@ -1,0 +1,21 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - 'docker.compose.yml'
+      - '.github/workflows/**'
+      - '.github/scripts/**'
+      - '!**.md'
+      - '!**/.gitignore'
+
+jobs:
+  call-deploy:
+    uses: ./.github/workflows/deploy.yml
+    with:
+      service_name: backend
+      context: ./backend
+      image_name: ${{ github.repository }}-backend
+    secrets: inherit
