@@ -12,7 +12,9 @@ import {
   User,
   Application,
   Prisma,
+  PrismaClient,
 } from '@prisma/client';
+import { refNumberExtension } from '../../database/extensions/ref-number.extension';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { QueryApplicationsDto } from './dto/query-applications.dto';
@@ -28,18 +30,22 @@ import {
 
 @Injectable()
 export class ApplicationsService {
+  private extendedPrisma: unknown;
+
   constructor(
     private prisma: PrismaService,
     private audit: AuditService,
-  ) {}
+  ) {
+    this.extendedPrisma = this.prisma.$extends(refNumberExtension);
+  }
 
   async create(user: User, dto: CreateApplicationDto) {
-    return this.prisma.application.create({
+    return (this.extendedPrisma as PrismaClient).application.create({
       data: {
         ...dto,
         applicantId: user.id,
       } as unknown as Prisma.ApplicationCreateInput,
-    });
+    }) as Promise<Application>;
   }
 
   async findAll(user: User, query: QueryApplicationsDto) {
