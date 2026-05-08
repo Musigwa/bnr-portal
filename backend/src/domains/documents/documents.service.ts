@@ -1,4 +1,141 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
+import { PrismaService } from '../../database/prisma.service';
+import { ApplicationStatus, Role, User } from '@prisma/client';
+import * as fs from 'fs';
+import * as path from 'path';
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
 @Injectable()
-export class DocumentsService {}
+export class DocumentsService {
+  constructor(private prisma: PrismaService) {}
+
+  async upload(applicationId: string, user: User, file: Express.Multer.File) {
+    if (file.size > MAX_FILE_SIZE) {
+      fs.unlinkSync(file.path);
+      throw new BadRequestException('File exceeds maximum size of 5MB');
+    }
+
+    const app = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+    });
+
+    if (!app) throw new NotFoundException('Application not found');
+
+    if (user.role === Role.APPLICANT && app.applicantId !== user.id) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    const allowedStatuses: ApplicationStatus[] = [
+      ApplicationStatus.DRAFT,
+      ApplicationStatus.PENDING_INFO,
+    ];
+    if (!allowedStatuses.includes(app.status)) {
+      throw new ForbiddenException(
+        'Documents can only be uploaded on DRAFT or PENDING_INFO applications',
+      );
+    }
+
+    // Get next version number for this filename
+    const existing = await this.prisma.document.findFirst({
+      where: {
+        applicationId,
+        fileName: file.originalname,
+        isSuperseded: false,
+      },
+      orderBy: { version: 'desc' },
+    });
+
+    // Supersede previous version if exists
+    if (existing) {
+      await this.prisma.document.update({
+        where: { id: existing.id },
+        data: { isSuperseded: true },
+      });
+    }
+
+    const nextVersion = existing ? existing.version + 1 : 1;
+
+    const document = await this.prisma.document.create({
+      data: {
+        applicationId,
+        fileName: file.originalname,
+        fileSize: file.size,
+        mimeType: file.mimetype,
+        storagePath: file.path,
+        uploadedById: user.id,
+        version: nextVersion,
+        isSuperseded: false,
+      },
+    });
+
+    return document;
+  }
+
+  async findAll(applicationId: string, user: User) {
+    const app = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+    });
+
+    if (!app) throw new NotFoundException('Application not found');
+
+    if (user.role === Role.APPLICANT && app.applicantId !== user.id) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    const documents = await this.prisma.document.findMany({
+      where: { applicationId },
+      orderBy: [{ fileName: 'asc' }, { version: 'desc' }],
+    });
+
+    // Group by filename: current + history
+    const grouped = documents.reduce(
+      (acc, doc) => {
+        if (!acc[doc.fileName])
+          acc[doc.fileName] = { current: null, history: [] };
+        if (!doc.isSuperseded) acc[doc.fileName].current = doc;
+        else acc[doc.fileName].history.push(doc);
+        return acc;
+      },
+      {} as Record<string, { current: any; history: any[] }>,
+    );
+
+    return Object.values(grouped);
+  }
+
+  async download(applicationId: string, documentId: string, user: User) {
+    const app = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+    });
+
+    if (!app) throw new NotFoundException('Application not found');
+
+    if (user.role === Role.APPLICANT && app.applicantId !== user.id) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    const doc = await this.prisma.document.findFirst({
+      where: { id: documentId, applicationId },
+    });
+
+    if (!doc) throw new NotFoundException('Document not found');
+    if (!fs.existsSync(doc.storagePath)) {
+      throw new NotFoundException('File not found on disk');
+    }
+
+    return doc;
+  }
+
+  ensureUploadDir() {
+    if (!fs.existsSync(UPLOAD_DIR)) {
+      fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+    }
+    return UPLOAD_DIR;
+  }
+}

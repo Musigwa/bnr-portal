@@ -3,9 +3,11 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/global-exception.filter';
+import { DocumentsService } from './domains/documents/documents.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.get(DocumentsService).ensureUploadDir();
 
   app.useGlobalPipes(
     new ValidationPipe({
