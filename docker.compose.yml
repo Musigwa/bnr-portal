@@ -78,7 +78,7 @@ services:
       - observability-network
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('http').request({ host: '127.0.0.1', port: process.env.BACKEND_PORT, path: '/api/health/liveness', timeout: 5000 }, (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1)).end()\""]
-      interval: 10s
+      interval: 3s
       timeout: 5s
       retries: 5
 
@@ -127,10 +127,10 @@ services:
       - bnr_network
       - observability-network
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"require('http').request({ host: 'localhost', port: process.env.PORT, path: '/', timeout: 2000 }, (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1)).end()\""]
-      interval: 5s
-      timeout: 2s
-      retries: 3
+      test: ["CMD-SHELL", "node -e \"require('http').request({ host: '127.0.0.1', port: process.env.PORT, path: '/', timeout: 5000 }, (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1)).end()\""]
+      interval: 3s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
