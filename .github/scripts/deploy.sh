@@ -111,8 +111,8 @@ fi
 # 7. Stop and remove the old container
 if [ -n "$OLD_CONTAINER" ]; then
   echo "🛑 Stopping old container $OLD_CONTAINER..."
-  docker stop $OLD_CONTAINER
-  docker rm $OLD_CONTAINER
+  docker stop $OLD_CONTAINER || true
+  docker rm $OLD_CONTAINER || true
 fi
 
 echo "🎉 Deployment of $SERVICE complete!"
