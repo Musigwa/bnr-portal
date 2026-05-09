@@ -48,12 +48,9 @@ jobs:
     secrets: inherit
 
   deploy-frontend:
-    needs: [detect-changes, deploy-backend]
-    # Run if frontend changed AND (backend succeeded OR backend was skipped)
-    if: |
-      always() && 
-      needs.detect-changes.outputs.frontend == 'true' && 
-      (needs.deploy-backend.result == 'success' || needs.deploy-backend.result == 'skipped')
+    needs: [detect-changes]
+    # Run if frontend changed
+    if: needs.detect-changes.outputs.frontend == 'true'
     permissions:
       contents: read
       packages: write
