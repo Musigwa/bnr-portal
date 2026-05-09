@@ -50,6 +50,9 @@ if [ -z "$NEW_CONTAINER" ]; then
   exit 1
 fi
 
+NEW_CONTAINER_NAME=$(docker ps --filter "id=$NEW_CONTAINER" --format '{{.Names}}')
+echo "🏷️ New container name: $NEW_CONTAINER_NAME"
+
 # 5. Get the port assigned to the new container
 # We assume the container exposes port 3000 for frontend and 3001 for backend internally
 CONTAINER_PORT=3000
@@ -65,6 +68,21 @@ if [ -z "$NEW_PORT" ]; then
 fi
 
 echo "✅ New container $NEW_CONTAINER is running on port $NEW_PORT"
+
+echo "🔍 Waiting for new container to become healthy..."
+for i in {1..10}; do
+  STATUS=$(docker inspect -f '{{.State.Health.Status}}' $NEW_CONTAINER)
+  if [ "$STATUS" = "healthy" ]; then
+    echo "✅ Container is healthy!"
+    break
+  fi
+  echo "⏳ Current status: $STATUS. Waiting..."
+  sleep 3
+  if [ $i -eq 10 ]; then
+    echo "❌ Container failed health check!"
+    exit 1
+  fi
+done
 
 # 6. Update Caddy configuration
 # We assume Caddy looks at files in /opt/observability/caddy/sites/
@@ -93,7 +111,7 @@ else
   # Write to a temp file first
   cat <<EOF > /tmp/caddy_temp
 $DOMAIN {
-    reverse_proxy $NEW_CONTAINER:$CONTAINER_PORT
+    reverse_proxy $NEW_CONTAINER_NAME:$CONTAINER_PORT
 }
 EOF
 
@@ -103,6 +121,26 @@ EOF
     mv /tmp/caddy_temp "$SITE_FILE"
     echo "🔄 Reloading Caddy..."
     docker exec "$CADDY_CONTAINER" caddy reload --config /etc/caddy/Caddyfile
+    
+    echo "🔍 Verifying public routing through Caddy..."
+    PUBLIC_URL="https://${DOMAIN}/api/docs"
+    if [ "$SERVICE" = "frontend" ]; then
+      PUBLIC_URL="https://${DOMAIN}/"
+    fi
+
+    for i in {1..5}; do
+      status=$(curl -s -k -o /dev/null -L -w "%{http_code}" -m 10 "$PUBLIC_URL" || echo "000")
+      if [ "$status" = "200" ]; then
+        echo "✅ Public routing is working! (Status: $status)"
+        break
+      fi
+      echo "⏳ Waiting for Caddy to route traffic (Current Status: $status)..."
+      sleep 3
+      if [ $i -eq 5 ]; then
+        echo "❌ Public routing failed! Caddy might not be routing correctly."
+        exit 1
+      fi
+    done
   else
     echo "⚠️ Cannot write to $CADDY_SITES_PATH. Manual intervention may be required."
   fi

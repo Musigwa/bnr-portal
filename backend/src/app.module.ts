@@ -11,6 +11,7 @@ import { AuditModule } from './domains/audit/audit.module';
 import { AuthModule } from './domains/auth/auth.module';
 import { DocumentsModule } from './domains/documents/documents.module';
 import { UsersModule } from './domains/users/users.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { UsersModule } from './domains/users/users.module';
     DocumentsModule,
     AuditModule,
   ],
+  controllers: [AppController],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
