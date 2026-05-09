@@ -26,6 +26,12 @@ if [ -f ".env.production" ]; then
   echo "ℹ️ Using .env.production file"
 fi
 
+# 0. Ensure database is running (only for backend)
+if [ "$SERVICE" = "backend" ]; then
+  echo "🐘 Ensuring database is running..."
+  docker compose -f docker.compose.yml $ENV_FILE --profile production up -d postgres
+fi
+
 # 1. Pull the new image
 docker compose -f docker.compose.yml $ENV_FILE --profile production pull $SERVICE
 
