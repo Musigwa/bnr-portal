@@ -33,7 +33,7 @@ docker compose -f docker.compose.yml $ENV_FILE --profile production pull $SERVIC
 OLD_CONTAINER=$(docker ps --filter "label=com.docker.compose.service=$SERVICE" --filter "status=running" -q | head -n 1)
 
 # 3. Scale up to 2 instances (starts the new one without stopping the old one)
-docker compose -f docker.compose.yml $ENV_FILE --profile production up -d --no-deps --scale $SERVICE=2
+docker compose -f docker.compose.yml $ENV_FILE --profile production up -d --no-deps --scale $SERVICE=2 $SERVICE
 
 # 4. Find the NEW container (the one that is NOT the old one)
 ALL_CONTAINERS=$(docker ps --filter "label=com.docker.compose.service=$SERVICE" --filter "status=running" -q)
