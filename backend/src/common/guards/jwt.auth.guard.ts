@@ -18,7 +18,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     if (isPublic) return true;
 
     const request = context.switchToHttp().getRequest<Request>();
-    if (request.url.includes('/api/docs')) {
+    if (request.url.includes('/docs')) {
       return true;
     }
 

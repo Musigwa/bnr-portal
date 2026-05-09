@@ -129,7 +129,7 @@ EOF
     docker exec "$CADDY_CONTAINER" caddy reload --config /etc/caddy/Caddyfile
     
     echo "🔍 Verifying public routing through Caddy..."
-    PUBLIC_URL="https://${DOMAIN}/api/docs"
+    PUBLIC_URL="https://${DOMAIN}/docs"
     if [ "$SERVICE" = "frontend" ]; then
       PUBLIC_URL="https://${DOMAIN}/"
     fi

@@ -42,7 +42,6 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new GlobalExceptionFilter());
-  app.setGlobalPrefix('api');
   app.enableCors();
 
   // Swagger
@@ -59,17 +58,16 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document, {
+  SwaggerModule.setup('docs', app, document, {
     swaggerOptions: { persistAuthorization: true },
     customSiteTitle: 'BNR Bank Licensing & Compliance Portal',
   });
 
   app.get(DocumentsService).ensureUploadDir();
 
-  console.log('PORT====>', appPort);
   await app.listen(appPort);
-  console.log(`🚀 API running at http://localhost:${appPort}/api`);
-  console.log(`📖 Swagger docs at http://localhost:${appPort}/api/docs`);
+  console.log(`🚀 API running at http://localhost:${appPort}`);
+  console.log(`📖 Swagger docs at http://localhost:${appPort}/docs`);
 }
 bootstrap().catch((error) => {
   console.error('Application bootstrap failed:', error);
