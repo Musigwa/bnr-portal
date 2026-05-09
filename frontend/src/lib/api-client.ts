@@ -39,7 +39,7 @@ export function loadRefreshToken() {
 async function attemptRefresh(): Promise<string> {
   if (!refreshToken) throw new Error('No refresh token');
 
-  const res = await fetch(`${API_URL}/api/auth/refresh`, {
+  const res = await fetch(`${API_URL}/auth/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refreshToken }),
@@ -92,7 +92,7 @@ async function request<T>(
     headers['Content-Type'] = 'application/json';
   }
 
-  const res = await fetch(`${API_URL}/api${endpoint}`, {
+  const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
   });
