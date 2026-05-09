@@ -76,6 +76,7 @@ services:
       - postgres
     networks:
       - bnr_network
+      - observability-network
 
   # ==========================================
   # FRONTEND - DEVELOPMENT
@@ -119,6 +120,7 @@ services:
       - backend
     networks:
       - bnr_network
+      - observability-network
 
 volumes:
   postgres_data:
@@ -126,3 +128,5 @@ volumes:
 networks:
   bnr_network:
     driver: bridge
+  observability-network:
+    external: true
