@@ -13,7 +13,7 @@ export function useTableQuery() {
     searchParams.forEach((value, key) => {
       params[key] = value;
     });
-    const queryParams: Record<string, unknown> = {
+    const queryParams: Record<string, string | number | boolean | undefined> = {
       page: Number(params.page) || 1,
       limit: Number(params.limit) || 5,
       searchQuery: params.searchQuery || '',

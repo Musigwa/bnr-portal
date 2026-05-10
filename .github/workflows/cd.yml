@@ -13,7 +13,33 @@ on:
       - '!**/.gitignore'
 
 jobs:
+  quality:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Generate Prisma client
+        run: pnpm -r postinstall
+      - name: Quality Check
+        run: |
+          pnpm --filter @bnr-portal/frontend lint
+          pnpm --filter @bnr-portal/frontend typecheck
+          pnpm --filter @bnr-portal/backend lint
+          pnpm --filter @bnr-portal/backend typecheck
+
   detect-changes:
+    needs: quality
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
@@ -34,7 +60,7 @@ jobs:
               - '.github/**'
 
   deploy-backend:
-    needs: detect-changes
+    needs: [quality, detect-changes]
     if: needs.detect-changes.outputs.backend == 'true'
     permissions:
       contents: read
@@ -48,7 +74,7 @@ jobs:
     secrets: inherit
 
   deploy-frontend:
-    needs: [detect-changes]
+    needs: [quality, detect-changes]
     # Run if frontend changed
     if: needs.detect-changes.outputs.frontend == 'true'
     permissions:

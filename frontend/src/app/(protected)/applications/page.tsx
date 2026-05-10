@@ -85,13 +85,13 @@ export default function ApplicationsPage() {
         onPageSizeChange={(limit) => setQuery({ limit, page: 1 })}
         
         // Search
-        searchQuery={query.searchQuery}
+        searchQuery={String(query.searchQuery || '')}
         onSearchChange={(searchQuery) => setQuery({ searchQuery, page: 1 })}
         
         // Filters
         activeFilters={{
-          status: query.status || 'all',
-          institutionType: query.institutionType || 'all',
+          status: String(query.status || 'all'),
+          institutionType: String(query.institutionType || 'all'),
         }}
         onFilterChange={(key, value) => {
           setQuery({ [key]: value !== 'all' ? value : undefined, page: 1 });
