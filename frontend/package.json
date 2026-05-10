@@ -1,9 +1,17 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "@bnr-portal/frontend",
+  "version": "1.0.0",
+  "description": "Frontend application for the BNR Licensing & Compliance Portal, built with Next.js and Tailwind CSS.",
+  "author": "Musigwa",
+  "license": "MIT",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Musigwa/bnr-portal.git",
+    "directory": "frontend"
+  },
   "scripts": {
-    "dev": "next dev",
+    "dev": "dotenv -e ../.env.development -- next dev",
     "build": "next build",
     "start": "next start -p $PORT",
     "lint": "eslint"
