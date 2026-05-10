@@ -43,7 +43,7 @@ export function LoginForm() {
   const displayedError = apiError || (loginError as { message?: string })?.message;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-[400px] shadow-lg border-0 ring-1 ring-slate-200">
         <CardHeader className="space-y-2 pb-6 pt-8">
           <div className="flex justify-center mb-4">
@@ -54,7 +54,7 @@ export function LoginForm() {
           <CardTitle className="text-2xl font-bold tracking-tight text-center">
             Welcome to BNR Portal
           </CardTitle>
-          <CardDescription className="text-center text-slate-500">
+          <CardDescription className="text-center text-muted-foreground">
             Sign in to your account to continue
           </CardDescription>
         </CardHeader>

@@ -18,7 +18,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
       <body className={`${inter.className} min-h-full flex flex-col`}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <ThemeProvider 
+          attribute="class" 
+          defaultTheme="light" 
+          storageKey="bnr-portal-theme"
+          enableSystem={false}
+        >
           <QueryProvider>
             <AuthProvider>
               {children}

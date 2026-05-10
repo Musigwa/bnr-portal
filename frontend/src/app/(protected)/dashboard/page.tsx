@@ -8,8 +8,6 @@ import { useMemo } from 'react';
 import { DashboardStats } from './_components/dashboard-stats';
 import { DashboardTable } from './_components/dashboard-table';
 
-import { notify } from '@/lib/notifications';
-
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
   const { data: applications, isLoading } = useGetApplications();
@@ -37,22 +35,16 @@ export default function DashboardPage() {
   const handleAssign = async (id: string) => {
     try {
       await assignApp(id);
-      notify.success('Application assigned successfully');
-    } catch (err: unknown) {
-      const error = err as { message?: string };
-      notify.error(error.message || 'Failed to assign application');
-      console.error('Failed to assign:', err);
+    } catch {
+      // Error is handled by the hook
     }
   };
 
   const handleApprove = async (id: string) => {
     try {
       await approveApp({ id, notes: 'Quick approved from dashboard' });
-      notify.success('Application approved successfully');
-    } catch (err: unknown) {
-      const error = err as { message?: string };
-      notify.error(error.message || 'Failed to approve application');
-      console.error('Failed to approve:', err);
+    } catch {
+      // Error is handled by the hook
     }
   };
 

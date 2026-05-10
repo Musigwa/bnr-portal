@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { Application, AuditLog } from '@/types';
+import { notify } from '@/lib/notifications';
 
 export const APPLICATION_KEYS = {
   all: ['applications'] as const,
@@ -38,7 +39,11 @@ export function useAssignApplication() {
     mutationFn: (id: string) => apiClient.post(`/applications/${id}/assign-reviewer`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
+      notify.success('Application assigned successfully');
     },
+    onError: (error: { message?: string }) => {
+      notify.error(error.message || 'Failed to assign application');
+    }
   });
 }
 
@@ -49,7 +54,11 @@ export function useApproveApplication() {
       apiClient.post(`/applications/${id}/approve`, { notes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
+      notify.success('Application approved successfully');
     },
+    onError: (error: { message?: string }) => {
+      notify.error(error.message || 'Failed to approve application');
+    }
   });
 }
 
@@ -59,7 +68,11 @@ export function useSubmitApplication() {
     mutationFn: (id: string) => apiClient.post(`/applications/${id}/submit`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
+      notify.success('Application submitted successfully');
     },
+    onError: (error: { message?: string }) => {
+      notify.error(error.message || 'Failed to submit application');
+    }
   });
 }
 
@@ -69,7 +82,11 @@ export function useCreateApplication() {
     mutationFn: (data: Partial<Application>) => apiClient.post<Application>('/applications', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
+      notify.success('Application created successfully');
     },
+    onError: (error: { message?: string }) => {
+      notify.error(error.message || 'Failed to create application');
+    }
   });
 }
 
@@ -80,7 +97,11 @@ export function useRequestInfo() {
       apiClient.post(`/applications/${id}/request-info`, { notes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
+      notify.success('Information requested successfully');
     },
+    onError: (error: { message?: string }) => {
+      notify.error(error.message || 'Failed to request information');
+    }
   });
 }
 
@@ -91,7 +112,11 @@ export function useCompleteReview() {
       apiClient.post(`/applications/${id}/complete-review`, { reviewerNotes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
+      notify.success('Review completed successfully');
     },
+    onError: (error: { message?: string }) => {
+      notify.error(error.message || 'Failed to complete review');
+    }
   });
 }
 
@@ -102,7 +127,11 @@ export function useRejectApplication() {
       apiClient.post(`/applications/${id}/reject`, { rejectionReason }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
+      notify.success('Application rejected successfully');
     },
+    onError: (error: { message?: string }) => {
+      notify.error(error.message || 'Failed to reject application');
+    }
   });
 }
 
@@ -113,7 +142,11 @@ export function useUpdateApplication() {
       apiClient.patch<Application>(`/applications/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
+      notify.success('Application updated successfully');
     },
+    onError: (error: { message?: string }) => {
+      notify.error(error.message || 'Failed to update application');
+    }
   });
 }
 
@@ -123,7 +156,11 @@ export function useResubmitApplication() {
     mutationFn: (id: string) => apiClient.post(`/applications/${id}/resubmit`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
+      notify.success('Application resubmitted successfully');
     },
+    onError: (error: { message?: string }) => {
+      notify.error(error.message || 'Failed to resubmit application');
+    }
   });
 }
 
@@ -134,6 +171,10 @@ export function useDeleteDocument() {
       apiClient.delete(`/applications/${applicationId}/documents/${documentId}`),
     onSuccess: (_, { applicationId }) => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.details(applicationId) });
+      notify.success('Document deleted successfully');
     },
+    onError: (error: { message?: string }) => {
+      notify.error(error.message || 'Failed to delete document');
+    }
   });
 }
