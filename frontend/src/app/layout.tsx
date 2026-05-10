@@ -20,9 +20,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} min-h-full flex flex-col`}>
         <ThemeProvider 
           attribute="class" 
-          defaultTheme="light" 
+          defaultTheme="system" 
           storageKey="bnr-portal-theme"
-          enableSystem={false}
+          enableSystem={true}
         >
           <QueryProvider>
             <AuthProvider>
