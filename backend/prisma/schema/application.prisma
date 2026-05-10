@@ -20,6 +20,9 @@ model Application {
     reviewerId String?
     reviewer   User?   @relation("ReviewerApplications", fields: [reviewerId], references: [id])
 
+    approverId String?
+    approver   User?   @relation("ApproverApplications", fields: [approverId], references: [id])
+
     institutionName    String
     institutionType    String
     registrationNumber String?

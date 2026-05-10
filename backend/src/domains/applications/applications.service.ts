@@ -22,6 +22,7 @@ import {
   RequestInfoDto,
   CompleteReviewDto,
   RejectDto,
+  ApproveDto,
 } from './dto/transition.dto';
 import {
   assertValidTransition,
@@ -58,6 +59,7 @@ export class ApplicationsService {
       include: {
         applicant: { select: { id: true, fullName: true, email: true } },
         reviewer: { select: { id: true, fullName: true, email: true } },
+        approver: { select: { id: true, fullName: true, email: true } },
         _count: { select: { documents: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -84,6 +86,7 @@ export class ApplicationsService {
       include: {
         applicant: { select: { id: true, fullName: true, email: true } },
         reviewer: { select: { id: true, fullName: true, email: true } },
+        approver: { select: { id: true, fullName: true, email: true } },
         documents: { orderBy: { uploadedAt: 'desc' } },
       },
     });
@@ -142,32 +145,44 @@ export class ApplicationsService {
 
   async requestInfo(identifier: string, user: User, dto: RequestInfoDto) {
     const id = await this.resolveId(identifier);
-    return this.transition(id, user, 'REQUEST_INFO', async (tx, app) => {
-      this.assertAssignedReviewer(app, user);
-      return tx.application.update({
-        where: { id, version: app.version },
-        data: {
-          status: ApplicationStatus.PENDING_INFO,
-          reviewerNotes: dto.notes,
-          version: { increment: 1 },
-        },
-      });
-    });
+    return this.transition(
+      id,
+      user,
+      'REQUEST_INFO',
+      async (tx, app) => {
+        this.assertAssignedReviewer(app, user);
+        return tx.application.update({
+          where: { id, version: app.version },
+          data: {
+            status: ApplicationStatus.PENDING_INFO,
+            reviewerNotes: dto.notes,
+            version: { increment: 1 },
+          },
+        });
+      },
+      dto as unknown as Prisma.InputJsonValue,
+    );
   }
 
   async completeReview(identifier: string, user: User, dto: CompleteReviewDto) {
     const id = await this.resolveId(identifier);
-    return this.transition(id, user, 'COMPLETE_REVIEW', async (tx, app) => {
-      this.assertAssignedReviewer(app, user);
-      return tx.application.update({
-        where: { id, version: app.version },
-        data: {
-          status: ApplicationStatus.REVIEWED,
-          reviewerNotes: dto.reviewerNotes,
-          version: { increment: 1 },
-        },
-      });
-    });
+    return this.transition(
+      id,
+      user,
+      'COMPLETE_REVIEW',
+      async (tx, app) => {
+        this.assertAssignedReviewer(app, user);
+        return tx.application.update({
+          where: { id, version: app.version },
+          data: {
+            status: ApplicationStatus.REVIEWED,
+            reviewerNotes: dto.reviewerNotes,
+            version: { increment: 1 },
+          },
+        });
+      },
+      dto as unknown as Prisma.InputJsonValue,
+    );
   }
 
   async resubmit(identifier: string, user: User) {
@@ -185,46 +200,73 @@ export class ApplicationsService {
     });
   }
 
-  async approve(identifier: string, user: User) {
+  async approve(identifier: string, user: User, dto?: ApproveDto) {
     const id = await this.resolveId(identifier);
-    return this.transition(id, user, 'APPROVE', async (tx, app) => {
-      this.assertNotReviewer(app, user);
-      return tx.application.update({
-        where: { id, version: app.version },
-        data: {
-          status: ApplicationStatus.APPROVED,
-          version: { increment: 1 },
-          decidedAt: new Date(),
-        },
-      });
-    });
+    return this.transition(
+      id,
+      user,
+      'APPROVE',
+      async (tx, app) => {
+        this.assertNotReviewer(app, user);
+        return tx.application.update({
+          where: { id, version: app.version },
+          data: {
+            status: ApplicationStatus.APPROVED,
+            version: { increment: 1 },
+            decidedAt: new Date(),
+            approverId: user.id,
+          },
+        });
+      },
+      dto as unknown as Prisma.InputJsonValue,
+    );
   }
 
   async reject(identifier: string, user: User, dto: RejectDto) {
     const id = await this.resolveId(identifier);
-    return this.transition(id, user, 'REJECT', async (tx, app) => {
-      this.assertNotReviewer(app, user);
-      return tx.application.update({
-        where: { id, version: app.version },
-        data: {
-          status: ApplicationStatus.REJECTED,
-          rejectionReason: dto.rejectionReason,
-          version: { increment: 1 },
-          decidedAt: new Date(),
-        },
-      });
-    });
+    return this.transition(
+      id,
+      user,
+      'REJECT',
+      async (tx, app) => {
+        this.assertNotReviewer(app, user);
+        return tx.application.update({
+          where: { id, version: app.version },
+          data: {
+            status: ApplicationStatus.REJECTED,
+            rejectionReason: dto.rejectionReason,
+            version: { increment: 1 },
+            decidedAt: new Date(),
+            approverId: user.id,
+          },
+        });
+      },
+      dto as unknown as Prisma.InputJsonValue,
+    );
   }
 
   async getAuditLog(identifier: string, user: User) {
-    if (user.role === Role.APPLICANT)
-      throw new ForbiddenException('Access denied');
     const id = await this.resolveId(identifier);
+    // Essential for ownership check
     await this.findOne(id, user);
-    return this.audit.getByApplication(id);
+    const logs = await this.audit.getByApplication(id);
+
+    // If applicant, mask actor details for privacy/security
+    if (user.role === Role.APPLICANT) {
+      return logs.map((log) => ({
+        ...log,
+        actor: {
+          ...log.actor,
+          fullName: 'BNR Official',
+          email: 'hidden',
+        },
+      }));
+    }
+
+    return logs;
   }
 
-  // ─── Private helpers ────────────────────────────────────────────────────────
+  // Private helpers
 
   private async transition(
     id: string,
@@ -234,6 +276,7 @@ export class ApplicationsService {
       tx: Prisma.TransactionClient,
       app: Application,
     ) => Promise<Application>,
+    metadata?: Prisma.InputJsonValue,
   ) {
     return this.prisma.$transaction(async (tx) => {
       // Lock the row
@@ -257,6 +300,7 @@ export class ApplicationsService {
         action: transitionName,
         statusBefore: app.status,
         statusAfter: updated.status,
+        metadata,
       });
 
       return updated;

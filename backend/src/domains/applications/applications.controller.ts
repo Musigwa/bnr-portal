@@ -20,6 +20,7 @@ import {
   RequestInfoDto,
   CompleteReviewDto,
   RejectDto,
+  ApproveDto,
 } from './dto/transition.dto';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
@@ -135,8 +136,12 @@ export class ApplicationsController {
   @Post(':id/approve')
   @Roles(Role.APPROVER)
   @HttpCode(HttpStatus.OK)
-  approve(@Param('id') id: string, @CurrentUser() user: User) {
-    return this.service.approve(id, user);
+  approve(
+    @Param('id') id: string,
+    @CurrentUser() user: User,
+    @Body() dto: ApproveDto,
+  ) {
+    return this.service.approve(id, user, dto);
   }
 
   @ApiOperation({ summary: 'Reject application with reason' })
@@ -153,7 +158,7 @@ export class ApplicationsController {
 
   @ApiOperation({ summary: 'Get audit log for application' })
   @Get(':id/audit')
-  @Roles(Role.REVIEWER, Role.APPROVER, Role.ADMIN)
+  @Roles(Role.REVIEWER, Role.APPROVER, Role.ADMIN, Role.APPLICANT)
   getAuditLog(@Param('id') id: string, @CurrentUser() user: User) {
     return this.service.getAuditLog(id, user);
   }

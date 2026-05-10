@@ -15,6 +15,7 @@ model User {
 
     applications  Application[]  @relation("ApplicantApplications")
     reviewedApps  Application[]  @relation("ReviewerApplications")
+    approvedApps  Application[]  @relation("ApproverApplications")
     auditLogs     AuditLog[]
     refreshTokens RefreshToken[]
 }

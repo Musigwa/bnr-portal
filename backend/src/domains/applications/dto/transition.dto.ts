@@ -30,3 +30,13 @@ export class RejectDto {
   @MinLength(10)
   rejectionReason: string;
 }
+
+export class ApproveDto {
+  @ApiProperty({
+    description: 'Approval notes',
+    example: 'All requirements met, license granted.',
+  })
+  @IsString()
+  @MinLength(5)
+  notes: string;
+}
