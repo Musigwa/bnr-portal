@@ -28,6 +28,7 @@ import {
   assertValidTransition,
   Transition,
 } from './applications.state-machine';
+import { logForensic } from '../../common/utils/forensic-logger';
 
 @Injectable()
 export class ApplicationsService {
@@ -50,31 +51,107 @@ export class ApplicationsService {
   }
 
   async findAll(user: User, query: QueryApplicationsDto) {
-    const where: Prisma.ApplicationWhereInput = {};
-    if (query.status) where.status = query.status;
-    if (user.role === Role.APPLICANT) where.applicantId = user.id;
+    const { 
+      page = 1, 
+      limit = 10, 
+      searchQuery, 
+      searchFields, 
+      status, 
+      institutionType 
+    } = query;
 
-    return this.prisma.application.findMany({
-      where,
-      include: {
-        applicant: { select: { id: true, fullName: true, email: true } },
-        reviewer: { select: { id: true, fullName: true, email: true } },
-        approver: { select: { id: true, fullName: true, email: true } },
-        _count: { select: { documents: true } },
-      },
-      orderBy: { createdAt: 'desc' },
+    const skip = (Number(page) - 1) * Number(limit);
+    const take = Number(limit);
+
+    const where: Prisma.ApplicationWhereInput = {
+      AND: [],
+    };
+
+    // Role-based scoping
+    if (user.role === Role.APPLICANT) {
+      (where.AND as Prisma.ApplicationWhereInput[]).push({ applicantId: user.id });
+    }
+
+    // Direct filters
+    if (status) {
+      (where.AND as Prisma.ApplicationWhereInput[]).push({ status });
+    }
+    if (institutionType) {
+      (where.AND as Prisma.ApplicationWhereInput[]).push({ institutionType });
+    }
+
+    // Advanced Search
+    if (searchQuery && searchFields) {
+      const fields = searchFields.split(',').map(f => f.trim());
+      const searchConditions = fields.map(field => ({
+        [field]: { contains: searchQuery, mode: 'insensitive' }
+      }));
+      
+      (where.AND as Prisma.ApplicationWhereInput[]).push({
+        OR: searchConditions as Prisma.ApplicationWhereInput[]
+      });
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.application.findMany({
+        where,
+        include: {
+          applicant: { select: { id: true, fullName: true, email: true } },
+          reviewer: { select: { id: true, fullName: true, email: true } },
+          approver: { select: { id: true, fullName: true, email: true } },
+          _count: { select: { documents: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.application.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / Number(limit)),
+      }
+    };
+  }
+
+  async findById(id: string): Promise<Application | null> {
+    return this.prisma.application.findUnique({
+      where: { id },
+    });
+  }
+
+  async findByRefNumber(refNumber: string): Promise<Application | null> {
+    return this.prisma.application.findUnique({
+      where: { refNumber },
     });
   }
 
   private async resolveId(identifier: string): Promise<string> {
+    // 1. If it looks like a UUID, assume it's an ID
     if (identifier.length === 36 && identifier.split('-').length === 5) {
-      return identifier; // It is likely a UUID
+      return identifier;
     }
-    const app = await this.prisma.application.findUnique({
-      where: { refNumber: identifier },
-    });
+
+    // 2. If it matches BNR format (BNR-YYYY-NNNN), look up by RefNumber
+    if (identifier.startsWith('BNR-')) {
+      const app = await this.findByRefNumber(identifier);
+      if (!app) {
+        throw new NotFoundException(
+          `Application with reference ${identifier} not found`,
+        );
+      }
+      return app.id;
+    }
+
+    // 3. Fallback: try direct ID lookup if it's not a UUID but might be a custom ID
+    const app = await this.findById(identifier);
     if (!app) {
-      throw new NotFoundException('Application not found');
+      throw new NotFoundException(`Application ${identifier} not found`);
     }
     return app.id;
   }
@@ -251,16 +328,21 @@ export class ApplicationsService {
     await this.findOne(id, user);
     const logs = await this.audit.getByApplication(id);
 
-    // If applicant, mask actor details for privacy/security
+    // If applicant, mask other actors' details for privacy/security, but keep their own
     if (user.role === Role.APPLICANT) {
-      return logs.map((log) => ({
-        ...log,
-        actor: {
-          ...log.actor,
-          fullName: 'BNR Official',
-          email: 'hidden',
-        },
-      }));
+      return logs.map((log) => {
+        const isSelf = log.actorId === user.id;
+        return {
+          ...log,
+          actor: isSelf
+            ? log.actor
+            : {
+                ...log.actor,
+                fullName: 'BNR Official',
+                email: 'hidden',
+              },
+        };
+      });
     }
 
     return logs;
@@ -278,33 +360,43 @@ export class ApplicationsService {
     ) => Promise<Application>,
     metadata?: Prisma.InputJsonValue,
   ) {
-    return this.prisma.$transaction(async (tx) => {
-      // Lock the row
-      const [app] = await tx.$queryRaw<Application[]>`
-        SELECT * FROM "Application" WHERE id = ${id} FOR UPDATE
-      `;
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        // Lock the row
+        const apps = await tx.$queryRaw<Application[]>`
+          SELECT * FROM "Application" WHERE id = ${id} FOR UPDATE
+        `;
+        const app = apps[0];
 
-      if (!app) throw new NotFoundException('Application not found');
+        if (!app) throw new NotFoundException('Application not found');
 
-      assertValidTransition(transitionName, app.status, user.role);
+        assertValidTransition(transitionName, app.status, user.role);
 
-      const updated = await perform(tx, app);
+        const updated = await perform(tx, app);
 
-      if (!updated) {
-        throw new ConflictException('Application was modified concurrently');
-      }
+        if (!updated) {
+          throw new ConflictException('Application was modified concurrently');
+        }
 
-      await this.audit.log(tx, {
-        applicationId: id,
-        actorId: user.id,
-        action: transitionName,
-        statusBefore: app.status,
-        statusAfter: updated.status,
-        metadata,
+        await this.audit.log(tx, {
+          applicationId: id,
+          actorId: user.id,
+          action: transitionName,
+          statusBefore: app.status,
+          statusAfter: updated.status,
+          metadata,
+        });
+
+        return updated;
       });
-
-      return updated;
-    });
+    } catch (error) {
+      console.error(
+        `[FORENSIC ERROR] Transition ${transitionName} failed:`,
+        error,
+      );
+      logForensic(`Transition ${transitionName} failed for app ${id}`, error);
+      throw error;
+    }
   }
 
   private assertAssignedReviewer(app: Application, user: User) {

@@ -6,6 +6,7 @@ import { LogOut, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ThemeToggle } from '@/components/shared/theme-toggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -90,7 +91,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
               </nav>
             )}
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center justify-center rounded-full cursor-pointer outline-none hover:ring-2 hover:ring-slate-200 hover:ring-offset-2 transition-all">
                 <Avatar className="h-10 w-10">

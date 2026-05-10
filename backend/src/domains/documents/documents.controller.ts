@@ -8,6 +8,7 @@ import {
   Res,
   HttpCode,
   HttpStatus,
+  Delete,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -91,5 +92,17 @@ export class DocumentsController {
   ) {
     const doc = await this.service.download(applicationId, documentId, user);
     res.download(doc.storagePath, doc.fileName);
+  }
+
+  @ApiOperation({ summary: 'Delete document' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Roles(Role.APPLICANT)
+  @Delete(':documentId')
+  remove(
+    @Param('applicationId') applicationId: string,
+    @Param('documentId') documentId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.service.delete(applicationId, documentId, user);
   }
 }

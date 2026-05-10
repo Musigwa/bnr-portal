@@ -5,7 +5,7 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Eye, UserPlus, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { DataTable, ColumnDef, FilterDef, useDataTable } from '@/components/shared/table';
+import { DataTable, ColumnDef, FilterDef } from '@/components/shared/table';
 
 interface ApplicationTableProps {
   applications: Application[];
@@ -13,6 +13,21 @@ interface ApplicationTableProps {
   onAssign?: (id: string) => void;
   onApprove?: (id: string) => void;
   isActionLoading?: boolean;
+  
+  // Pagination & Filtering Props
+  currentPage: number;
+  totalPages: number;
+  totalResults: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
+  
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  
+  activeFilters: Record<string, string>;
+  onFilterChange: (key: string, value: string) => void;
+  onClearFilters: () => void;
 }
 
 export function ApplicationTable({ 
@@ -20,7 +35,18 @@ export function ApplicationTable({
   role, 
   onAssign, 
   onApprove,
-  isActionLoading 
+  isActionLoading,
+  currentPage,
+  totalPages,
+  totalResults,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  searchQuery,
+  onSearchChange,
+  activeFilters,
+  onFilterChange,
+  onClearFilters
 }: ApplicationTableProps) {
   const router = useRouter();
   const isStaff = role !== Role.APPLICANT;
@@ -28,7 +54,7 @@ export function ApplicationTable({
   const getActionLabel = (status: ApplicationStatus) => {
     switch (status) {
       case ApplicationStatus.DRAFT: return 'Continue';
-      case ApplicationStatus.PENDING_INFO: return 'Add Documents';
+      case ApplicationStatus.PENDING_INFO: return 'Update';
       default: return 'View';
     }
   };
@@ -143,48 +169,29 @@ export function ApplicationTable({
     }
   ];
 
-  const {
-    searchQuery,
-    setSearchQuery,
-    activeFilters,
-    paginatedData,
-    totalFiltered,
-    totalPages,
-    currentPage,
-    setCurrentPage,
-    pageSize,
-    setPageSize,
-    handleFilterChange,
-    clearFilters
-  } = useDataTable(applications, {
-    searchKey: 'institutionName',
-    filters: isStaff ? filters : [],
-    initialPageSize: 10
-  });
-
   return (
     <DataTable
-      data={paginatedData}
+      data={applications}
       columns={columns}
       onRowClick={(app) => navigateToApplication(app.refNumber)}
       
       // Toolbar props
       searchQuery={searchQuery}
-      onSearchChange={setSearchQuery}
+      onSearchChange={onSearchChange}
       searchKey="institutionName"
       searchPlaceholder="Search applications by name..."
       filters={isStaff ? filters : []}
       activeFilters={activeFilters}
-      onFilterChange={handleFilterChange}
-      onClear={clearFilters}
+      onFilterChange={onFilterChange}
+      onClear={onClearFilters}
       
       // Pagination props
       currentPage={currentPage}
       totalPages={totalPages}
-      totalResults={totalFiltered}
+      totalResults={totalResults}
       pageSize={pageSize}
-      onPageChange={setCurrentPage}
-      onPageSizeChange={setPageSize}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
     />
   );
 }

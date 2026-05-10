@@ -23,7 +23,7 @@ import {
 } from '@/hooks/api/use-applications';
 
 export default function ApplicationDetailsPage() {
-  const { id } = useParams() as { id: string };
+  const { identifier } = useParams() as { identifier: string };
   const { user } = useAuth();
   const router = useRouter();
   
@@ -45,9 +45,9 @@ export default function ApplicationDetailsPage() {
   });
 
   // 1. Fetch Application & Audit
-  const { data: app, isLoading, error } = useGetApplicationById(id);
+  const { data: app, isLoading, error } = useGetApplicationById(identifier);
   const isInternal = user?.role !== 'APPLICANT';
-  const { data: auditLogs } = useGetApplicationAudit(id);
+  const { data: auditLogs } = useGetApplicationAudit(identifier);
 
   // Mutations
   const { mutateAsync: assignApp } = useAssignApplication();
@@ -199,7 +199,7 @@ export default function ApplicationDetailsPage() {
                   <Button 
                     variant="outline"
                     className="w-full sm:w-auto shadow-sm"
-                    onClick={() => router.push(`/applications/${app.id}/edit`)}
+                    onClick={() => router.push(`/applications/${app.refNumber}/edit`)}
                   >
                     <FileEdit className="mr-2 h-4 w-4" /> Edit Details
                   </Button>
@@ -218,38 +218,47 @@ export default function ApplicationDetailsPage() {
                 </>
               )}
               {app.status === ApplicationStatus.PENDING_INFO && (
-                <Button 
-                  className="w-full sm:w-auto shadow-sm"
-                  onClick={() => setActionDialog({
-                    open: true,
-                    title: 'Resubmit Application',
-                    description: 'Have you provided all the requested information and documents? This will send the application back for review.',
-                    confirmText: 'Resubmit Now',
-                    confirmAction: async () => { await resubmit(app.id); }
-                  })}
-                >
-                  <Send className="mr-2 h-4 w-4" /> Resubmit Application
-                </Button>
+                <>
+                  <Button 
+                    variant="outline"
+                    className="w-full sm:w-auto shadow-sm"
+                    onClick={() => router.push(`/applications/${app.refNumber}/edit`)}
+                  >
+                    <FileEdit className="mr-2 h-4 w-4" /> Edit Details
+                  </Button>
+                  <Button 
+                    className="w-full sm:w-auto shadow-sm"
+                    onClick={() => setActionDialog({
+                      open: true,
+                      title: 'Resubmit Application',
+                      description: 'Have you provided all the requested information and documents? This will send the application back for review.',
+                      confirmText: 'Resubmit Now',
+                      confirmAction: async () => { await resubmit(app.id); }
+                    })}
+                  >
+                    <Send className="mr-2 h-4 w-4" /> Resubmit Application
+                  </Button>
+                </>
               )}
             </>
           )}
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-8">
         {/* Main Content */}
-        <div className="md:col-span-2 space-y-6">
-          {app.reviewerNotes && (
+        <div className="md:col-span-5 space-y-6">
+          {app.status === ApplicationStatus.PENDING_INFO && app.reviewerNotes && (
             <Card className="border-amber-200 bg-amber-50/30 overflow-hidden shadow-sm">
-              <CardHeader className="bg-amber-100/50 border-b border-amber-200 pb-4 pt-5 flex flex-row items-center gap-2">
+              <CardHeader className="bg-amber-100/50 border-b border-amber-200 flex flex-row items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-amber-600" />
                 <CardTitle className="text-xl text-amber-900">Reviewer Feedback</CardTitle>
               </CardHeader>
-              <CardContent className="pt-6">
+              <CardContent>
                 <p className="text-slate-800 leading-relaxed font-medium whitespace-pre-wrap">{app.reviewerNotes}</p>
                 {app.status === ApplicationStatus.PENDING_INFO && (
                   <p className="mt-4 text-sm text-amber-700 bg-amber-100/50 p-3 rounded-lg border border-amber-200/50">
-                    <strong>Action Required:</strong> Please update the application details or upload missing documents, then click &quot;Resubmit Application&quot; above.
+                    <strong>Action Required: </strong> Please update the application details or upload missing documents, then click &quot;Resubmit Application&quot; above.
                   </p>
                 )}
               </CardContent>
@@ -257,10 +266,10 @@ export default function ApplicationDetailsPage() {
           )}
 
           <Card className="border-slate-200 overflow-hidden shadow-sm">
-            <CardHeader className="bg-slate-50/50 border-b pb-4 pt-5">
-              <CardTitle className="text-xl">Institution Information</CardTitle>
+            <CardHeader className="bg-slate-50/50 border-b">
+              <CardTitle className="text-xl">Application details</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-6 md:grid-cols-2 pt-6">
+            <CardContent className="grid gap-6 md:grid-cols-2">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Registration Number</p>
                 <p className="text-slate-900 font-bold text-lg">{app.registrationNumber}</p>
@@ -277,10 +286,10 @@ export default function ApplicationDetailsPage() {
           </Card>
 
           <Card className="border-slate-200 overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between bg-slate-50/50 border-b pb-4 pt-5">
+            <CardHeader className="flex flex-row items-center justify-between bg-slate-50/50 border-b">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-slate-500" />
-                <CardTitle className="text-xl">Submitted Documents</CardTitle>
+                <CardTitle className="text-xl">Supporting documents</CardTitle>
                 {app.documents.length > 0 && (
                   <span className="ml-2 text-xs font-bold px-2 py-0.5 bg-primary/10 text-primary rounded-full border border-primary/20">
                     {app.documents.length} {app.documents.length === 1 ? 'file' : 'files'}
@@ -291,7 +300,7 @@ export default function ApplicationDetailsPage() {
                 <Download className="mr-2 h-4 w-4" /> Download All
               </Button>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent>
               <DocumentList 
                 documents={app.documents || []} 
                 onDownload={(id) => console.log('Download', id)} 
@@ -301,14 +310,14 @@ export default function ApplicationDetailsPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="md:col-span-3 space-y-6">
           {/* Sidebars for STAFF ONLY */}
           {isInternal && (
             <Card className="border-slate-200 overflow-hidden">
-              <CardHeader className="bg-slate-50/50 border-b pb-4 pt-5">
+              <CardHeader className="bg-slate-50/50 border-b">
                 <CardTitle className="text-xl">Assignment</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6 pt-6">
+              <CardContent className="space-y-6">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
                     <UserPlus className="h-5 w-5 text-slate-400" />
@@ -332,11 +341,11 @@ export default function ApplicationDetailsPage() {
           )}
 
           <Card className="border-slate-200 overflow-hidden">
-            <CardHeader className="bg-slate-50/50 border-b pb-4 pt-5 flex flex-row items-center gap-2">
+            <CardHeader className="bg-slate-50/50 border-b flex flex-row items-center gap-2">
               <Clock className="h-5 w-5 text-slate-500" />
               <CardTitle className="text-xl">Audit History</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="max-h-[558px] overflow-y-auto custom-scrollbar scroll-shadows">
               <AuditTimeline logs={auditLogs || []} />
             </CardContent>
           </Card>
