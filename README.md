@@ -60,6 +60,7 @@ pnpm dev
 
 ### 2. Production Environment
 The application is automatically deployed to production via GitHub Actions.
+- **Frontend**: [Web App](https://bnr-portal.212.47.77.2.nip.io)
 - **API Docs**: [Swagger UI](https://api.bnr-portal.212.47.77.2.nip.io/docs)
 
 ## Documentation
