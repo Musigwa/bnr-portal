@@ -76,7 +76,7 @@ function LoginForm() {
             Sign in to your account to continue
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }}>
           <CardContent className="space-y-4">
             {apiError && (
               <Alert variant="destructive">
