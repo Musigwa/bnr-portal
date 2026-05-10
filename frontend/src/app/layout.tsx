@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/providers/auth.provider';
 import { QueryProvider } from '@/providers/query-provider';
-import { Toaster } from '@/components/ui/sonner';
 
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ToastProvider } from '@/components/providers/toast-provider';

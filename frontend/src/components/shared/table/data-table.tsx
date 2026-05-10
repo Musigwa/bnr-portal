@@ -54,23 +54,23 @@ export function DataTable<T extends { id: string | number }>({
         />
       )}
 
-      <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
         <div className="relative overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+              <TableRow className="bg-muted/50 hover:bg-muted/50 border-border">
                 {columns.map((col) => (
                   <TableHead 
                     key={col.key} 
-                    className={cn('py-4 text-slate-600 font-semibold whitespace-nowrap', col.className)}
+                    className={cn('py-4 text-muted-foreground font-semibold whitespace-nowrap', col.className)}
                   >
                     {col.label}
                   </TableHead>
                 ))}
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {isLoading ? (
+            <TableBody className={cn(isLoading && data.length > 0 && 'opacity-50 transition-opacity pointer-events-none')}>
+              {isLoading && data.length === 0 ? (
                 [...Array(pageSize)].map((_, i) => (
                   <TableRow key={i}>
                     {columns.map((col) => (
@@ -95,12 +95,12 @@ export function DataTable<T extends { id: string | number }>({
                     key={item.id}
                     className={cn(
                       'transition-colors group',
-                      onRowClick && 'cursor-pointer hover:bg-slate-50/80'
+                      onRowClick && 'cursor-pointer hover:bg-muted/50'
                     )}
                     onClick={() => onRowClick?.(item)}
                   >
                     {columns.map((col) => (
-                      <TableCell key={col.key} className={cn('py-4 border-slate-100', col.className)}>
+                      <TableCell key={col.key} className={cn('py-4 border-border', col.className)}>
                         {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] || '')}
                       </TableCell>
                     ))}

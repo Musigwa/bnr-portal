@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { notify } from '@/lib/notifications';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { apiClient } from '@/lib/api-client';
@@ -116,9 +117,11 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
 
       // 3. Conditional Submit
       if (shouldSubmit) {
-        await submitApp(currentAppId);
+        await submitApp(currentAppId!);
+        notify.success('Application submitted successfully!');
         router.push('/applications');
       } else {
+        notify.success('Application saved as draft');
         // If it's just a save, stay or go to details
         if (!applicationId) {
           // If it was new, go to the new draft's detail page
@@ -130,7 +133,9 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
       }
     } catch (error: unknown) {
       const err = error as { message?: string };
-      setSubmissionError(err.message || 'An error occurred during submission.');
+      const msg = err.message || 'An error occurred during submission.';
+      setSubmissionError(msg);
+      notify.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -139,6 +144,7 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
   const onSubmit = (data: FormValues) => {
     handleFormSubmit(data, true);
   };
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -190,8 +196,8 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }}>
-      <Card className="shadow-md border-slate-200">
-        <CardHeader className="bg-slate-50/50 border-b pb-4 pt-5">
+      <Card className="shadow-md border-border">
+        <CardHeader className="bg-muted/30 border-b pb-4 pt-5">
           <CardTitle className="text-xl">Application Form</CardTitle>
         </CardHeader>
         <CardContent className="pt-6 space-y-6">
@@ -203,10 +209,10 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
           )}
 
           {Object.keys(errors).length > 0 && (
-            <Alert variant="destructive" className="bg-red-50 border-red-200">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertTitle className="text-red-800 font-bold">Form Validation Error</AlertTitle>
-              <AlertDescription className="text-red-700 mt-1">
+            <Alert variant="destructive" className="bg-destructive/10 border-destructive/20">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+              <AlertTitle className="text-destructive font-bold">Form Validation Error</AlertTitle>
+              <AlertDescription className="text-destructive/90 mt-1">
                 <ul className="list-disc list-inside space-y-1">
                   {Object.entries(errors).map(([key, error]) => (
                     <li key={key}>{error?.message}</li>
@@ -218,24 +224,24 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="institutionName" className="text-slate-700">Institution Name <span className="text-red-500">*</span></Label>
+              <Label htmlFor="institutionName" className="text-foreground/90">Institution Name <span className="text-destructive">*</span></Label>
               <Input
                 id="institutionName"
                 placeholder="e.g. Kigali Commercial Bank"
                 {...register('institutionName')}
-                className={errors.institutionName ? 'border-red-500 bg-red-50/50' : ''}
+                className={errors.institutionName ? 'border-destructive bg-destructive/5' : ''}
               />
               {errors.institutionName && (
-                <p className="text-sm text-red-500 font-medium">{errors.institutionName.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.institutionName.message}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="institutionType" className="text-slate-700">Institution Type <span className="text-red-500">*</span></Label>
+              <Label htmlFor="institutionType" className="text-foreground/90">Institution Type <span className="text-destructive">*</span></Label>
               <Select
                 onValueChange={(value) => setValue('institutionType', value ?? '')}
                 value={institutionType ?? undefined}
               >
-                <SelectTrigger className={errors.institutionType ? 'border-red-500 bg-red-50/50' : ''}>
+                <SelectTrigger className={errors.institutionType ? 'border-destructive bg-destructive/5' : ''}>
                   <SelectValue placeholder="Select institution type">
                     {institutionType ? institutionTypeLabels[institutionType] : undefined}
                   </SelectValue>
@@ -247,57 +253,57 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
                 </SelectContent>
               </Select>
               {errors.institutionType && (
-                <p className="text-sm text-red-500 font-medium">{errors.institutionType.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.institutionType.message}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="registrationNumber" className="text-slate-700">Registration Number <span className="text-red-500">*</span></Label>
+              <Label htmlFor="registrationNumber" className="text-foreground/90">Registration Number <span className="text-destructive">*</span></Label>
               <Input
                 id="registrationNumber"
                 placeholder="e.g. RDB-2026-001"
                 {...register('registrationNumber')}
-                className={errors.registrationNumber ? 'border-red-500 bg-red-50/50' : ''}
+                className={errors.registrationNumber ? 'border-destructive bg-destructive/5' : ''}
               />
               {errors.registrationNumber && (
-                <p className="text-sm text-red-500 font-medium">{errors.registrationNumber.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.registrationNumber.message}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="proposedCapital" className="text-slate-700">Proposed Capital (RWF) <span className="text-red-500">*</span></Label>
+              <Label htmlFor="proposedCapital" className="text-foreground/90">Proposed Capital (RWF) <span className="text-destructive">*</span></Label>
               <Input
                 id="proposedCapital"
                 type="number"
                 placeholder="e.g. 5000000"
                 {...register('proposedCapital', { valueAsNumber: true })}
-                className={errors.proposedCapital ? 'border-red-500 bg-red-50/50' : ''}
+                className={errors.proposedCapital ? 'border-destructive bg-destructive/5' : ''}
               />
               {errors.proposedCapital && (
-                <p className="text-sm text-red-500 font-medium">{errors.proposedCapital.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.proposedCapital.message}</p>
               )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col space-y-2">
-              <Label htmlFor="applicantNotes" className="text-slate-700">Applicant Notes (Optional)</Label>
+              <Label htmlFor="applicantNotes" className="text-foreground/90">Applicant Notes (Optional)</Label>
               <Textarea
                 id="applicantNotes"
                 placeholder="Add any additional context or notes regarding this application..."
                 {...register('applicantNotes')}
                 className={cn(
-                  errors.applicantNotes ? 'border-red-500 bg-red-50/50' : '',
+                  errors.applicantNotes ? 'border-destructive bg-destructive/5' : '',
                   'min-h-[120px]'
                 )}
               />
               {errors.applicantNotes && (
-                <p className="text-sm text-red-500 font-medium">{errors.applicantNotes.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.applicantNotes.message}</p>
               )}
             </div>
 
             <div className="flex flex-col space-y-2">
-              <Label className="text-slate-700">Documents</Label>
+              <Label className="text-foreground/90">Documents</Label>
               <div
-                className={`flex-1 flex flex-col border-2 border-dashed border-slate-300 rounded-xl p-5 hover:bg-slate-50 transition-colors cursor-pointer ${
+                className={`flex-1 flex flex-col border-2 border-dashed border-border rounded-xl p-5 hover:bg-muted/30 transition-colors cursor-pointer ${
                   files.length === 0 ? 'items-center justify-center text-center' : ''
                 }`}
                 onDragOver={(e) => e.preventDefault()}
@@ -307,7 +313,7 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
                 {files.length === 0 && existingDocs.length === 0 ? (
                   <>
                     <Upload className="h-6 w-6 text-primary mb-2" />
-                    <p className="mt-1 text-sm font-medium text-slate-700">
+                    <p className="mt-1 text-sm font-medium text-foreground/90">
                       Drag and drop files here, or click to select
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -317,7 +323,7 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
                 ) : (
                   <div className="w-full">
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-sm font-semibold text-slate-700">Selected Files</span>
+                      <span className="text-sm font-semibold text-foreground/90">Selected Files</span>
                     </div>
                     <div 
                       className="w-full flex flex-wrap gap-3 cursor-default" 
@@ -332,15 +338,15 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
                               e.stopPropagation();
                               removeExistingDoc(doc.id);
                             }}
-                            className="absolute top-1 right-1 bg-white shadow-sm border text-red-500 hover:bg-red-50 hover:text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            className="absolute top-1 right-1 bg-card shadow-sm border text-destructive hover:bg-destructive/10 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                           >
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                           </button>
                           <div className="flex-1 flex items-center justify-center w-full bg-primary/10">
                             <FileText className="h-8 w-8 text-primary" />
                           </div>
-                          <div className="w-full px-2 py-1.5 bg-white border-t border-slate-100 text-center">
-                            <p className="text-[11px] font-medium text-slate-700 truncate" title={doc.fileName}>
+                          <div className="w-full px-2 py-1.5 bg-card border-t border-border text-center">
+                            <p className="text-[11px] font-medium text-foreground/90 truncate" title={doc.fileName}>
                               {doc.fileName}
                             </p>
                           </div>
@@ -349,33 +355,33 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
 
                       {/* New Files */}
                       {files.map((file, index) => (
-                        <div key={`new-${index}`} className="relative group flex flex-col items-center justify-center w-28 h-28 border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden hover:border-primary transition-all">
+                        <div key={`new-${index}`} className="relative group flex flex-col items-center justify-center w-28 h-28 border border-border rounded-xl bg-card shadow-sm overflow-hidden hover:border-primary transition-all">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               removeFile(index);
                             }}
-                            className="absolute top-1 right-1 bg-white shadow-sm border text-red-500 hover:bg-red-50 hover:text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            className="absolute top-1 right-1 bg-card shadow-sm border text-destructive hover:bg-destructive/10 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                           >
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                           </button>
-                          <div className="flex-1 flex items-center justify-center w-full bg-slate-50/50 group-hover:bg-primary/5 transition-colors">
-                            <svg className="w-8 h-8 text-slate-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                          <div className="flex-1 flex items-center justify-center w-full bg-muted/30 group-hover:bg-primary/5 transition-colors">
+                            <svg className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                           </div>
-                          <div className="w-full px-2 py-1.5 bg-white border-t border-slate-100 text-center">
-                            <p className="text-[11px] font-medium text-slate-700 truncate" title={file.name}>
+                          <div className="w-full px-2 py-1.5 bg-card border-t border-border text-center">
+                            <p className="text-[11px] font-medium text-foreground/90 truncate" title={file.name}>
                               {file.name}
                             </p>
                           </div>
                         </div>
                       ))}
                       <div 
-                        className="flex flex-col items-center justify-center w-28 h-28 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 hover:bg-slate-100 hover:border-primary cursor-pointer transition-colors"
+                        className="flex flex-col items-center justify-center w-28 h-28 border-2 border-dashed border-border rounded-xl bg-muted/30 hover:bg-muted/50 hover:border-primary cursor-pointer transition-colors"
                         onClick={() => document.getElementById('fileInput')?.click()}
                       >
-                        <Upload className="h-5 w-5 text-slate-400 mb-1" />
-                        <span className="text-[11px] font-medium text-slate-500">Add More</span>
+                        <Upload className="h-5 w-5 text-muted-foreground mb-1" />
+                        <span className="text-[11px] font-medium text-muted-foreground">Add More</span>
                       </div>
                     </div>
                   </div>
@@ -385,13 +391,13 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex items-center justify-between bg-slate-50/50 border-t py-4 px-6">
+        <CardFooter className="flex items-center justify-between bg-muted/30 border-t py-4 px-6">
           <Button
             type="button"
             variant="ghost"
             onClick={() => router.back()}
             disabled={isLoading}
-            className="text-slate-500 hover:text-slate-700"
+            className="text-muted-foreground hover:text-foreground"
           >
             Cancel
           </Button>
@@ -401,7 +407,7 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
               variant="outline"
               onClick={() => handleSubmit((data) => handleFormSubmit(data, false))()}
               disabled={isLoading || !isValid}
-              className="bg-white"
+              className="bg-card"
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save as Draft

@@ -8,6 +8,8 @@ import { useMemo } from 'react';
 import { DashboardStats } from './_components/dashboard-stats';
 import { DashboardTable } from './_components/dashboard-table';
 
+import { notify } from '@/lib/notifications';
+
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
   const { data: applications, isLoading } = useGetApplications();
@@ -35,7 +37,10 @@ export default function DashboardPage() {
   const handleAssign = async (id: string) => {
     try {
       await assignApp(id);
-    } catch (err) {
+      notify.success('Application assigned successfully');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      notify.error(error.message || 'Failed to assign application');
       console.error('Failed to assign:', err);
     }
   };
@@ -43,7 +48,10 @@ export default function DashboardPage() {
   const handleApprove = async (id: string) => {
     try {
       await approveApp({ id, notes: 'Quick approved from dashboard' });
-    } catch (err) {
+      notify.success('Application approved successfully');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      notify.error(error.message || 'Failed to approve application');
       console.error('Failed to approve:', err);
     }
   };
@@ -64,7 +72,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
       
       <DashboardStats counts={counts} />
 

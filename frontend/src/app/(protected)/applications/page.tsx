@@ -15,7 +15,7 @@ export default function ApplicationsPage() {
   const { user } = useAuth();
   const { query, setQuery } = useTableQuery();
   
-  const { data: response, isLoading, error, refetch } = useGetApplications({
+  const { data: response, isLoading, isFetching, error, refetch } = useGetApplications({
     page: query.page,
     limit: query.limit,
     searchQuery: query.searchQuery,
@@ -74,6 +74,7 @@ export default function ApplicationsPage() {
       <ApplicationTable 
         applications={applications}
         role={user?.role || Role.APPLICANT}
+        isLoading={isFetching}
         
         // Pagination
         currentPage={meta.page}

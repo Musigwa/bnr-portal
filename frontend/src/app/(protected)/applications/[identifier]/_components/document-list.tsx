@@ -10,12 +10,12 @@ interface DocumentListProps {
 export function DocumentList({ documents, onDownload }: DocumentListProps) {
   if (!documents || documents.length === 0) {
     return (
-      <div className="py-12 text-center bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-100">
-        <div className="mx-auto w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 border border-slate-100">
-          <FileIcon className="w-7 h-7 text-slate-300" />
+      <div className="py-12 text-center bg-muted/20 rounded-2xl border-2 border-dashed border-border">
+        <div className="mx-auto w-14 h-14 rounded-full bg-card shadow-sm flex items-center justify-center mb-4 border border-border">
+          <FileIcon className="w-7 h-7 text-muted-foreground/30" />
         </div>
-        <p className="text-sm font-semibold text-slate-500">No documents attached to this application.</p>
-        <p className="text-xs text-slate-400 mt-1">Files will appear here once uploaded.</p>
+        <p className="text-sm font-semibold text-muted-foreground">No documents attached to this application.</p>
+        <p className="text-xs text-muted-foreground/70 mt-1">Files will appear here once uploaded.</p>
       </div>
     );
   }
@@ -29,16 +29,16 @@ export function DocumentList({ documents, onDownload }: DocumentListProps) {
       {documents.map((doc) => (
         <div 
           key={doc.id} 
-          className="group relative flex flex-col w-full h-48 border border-slate-200 rounded-2xl bg-white shadow-sm hover:shadow-2xl hover:border-primary/50 transition-all duration-500 overflow-hidden"
+          className="group relative flex flex-col w-full h-48 border border-border rounded-2xl bg-card shadow-sm hover:shadow-2xl hover:border-primary/50 transition-all duration-500 overflow-hidden"
         >
           {/* Background Glow Effect on Hover */}
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           
           {/* Top Section: Icon & Version */}
-          <div className="relative flex-1 flex items-center justify-center bg-slate-50/30 group-hover:bg-transparent transition-colors duration-500">
+          <div className="relative flex-1 flex items-center justify-center bg-muted/30 group-hover:bg-transparent transition-colors duration-500">
             <div className="relative transform group-hover:scale-110 transition-transform duration-500">
-              <div className="p-5 bg-white rounded-2xl shadow-sm border border-slate-100 group-hover:border-primary/20 group-hover:shadow-md transition-all">
-                <FileIcon className="w-11 h-11 text-slate-400 group-hover:text-primary transition-colors" />
+              <div className="p-5 bg-card rounded-2xl shadow-sm border border-border group-hover:border-primary/20 group-hover:shadow-md transition-all">
+                <FileIcon className="w-11 h-11 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
               <div className="absolute -bottom-2 -right-2 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-sm transform rotate-3">
                 {doc.fileName.split('.').pop()?.toUpperCase()}
@@ -52,7 +52,7 @@ export function DocumentList({ documents, onDownload }: DocumentListProps) {
             )}
             
             {/* Hover Overlay Actions */}
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
+            <div className="absolute inset-0 bg-foreground/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
               <Button 
                 variant="secondary" 
                 size="sm" 
@@ -65,16 +65,16 @@ export function DocumentList({ documents, onDownload }: DocumentListProps) {
           </div>
           
           {/* Bottom Section: Info */}
-          <div className="relative p-4 bg-white border-t border-slate-100 group-hover:bg-slate-50/50 transition-colors duration-500">
-            <p className="text-sm font-bold text-slate-800 truncate group-hover:text-primary transition-colors" title={doc.fileName}>
+          <div className="relative p-4 bg-card border-t border-border group-hover:bg-muted/30 transition-colors duration-500">
+            <p className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors" title={doc.fileName}>
               {doc.fileName}
             </p>
             <div className="flex items-center justify-between mt-2">
-              <p className="text-[11px] font-bold text-slate-400">
+              <p className="text-[11px] font-bold text-muted-foreground/70">
                 {Math.round(doc.fileSize / 1024).toLocaleString()} KB
               </p>
-              <div className="h-1 w-1 rounded-full bg-slate-300" />
-              <p className="text-[11px] font-bold text-slate-400">
+              <div className="h-1 w-1 rounded-full bg-border" />
+              <p className="text-[11px] font-bold text-muted-foreground/70">
                 {new Date(doc.uploadedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
               </p>
             </div>

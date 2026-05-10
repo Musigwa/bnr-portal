@@ -51,13 +51,13 @@ export class ApplicationsService {
   }
 
   async findAll(user: User, query: QueryApplicationsDto) {
-    const { 
-      page = 1, 
-      limit = 10, 
-      searchQuery, 
-      searchFields, 
-      status, 
-      institutionType 
+    const {
+      page = 1,
+      limit = 10,
+      searchQuery,
+      searchFields,
+      status,
+      institutionType,
     } = query;
 
     const skip = (Number(page) - 1) * Number(limit);
@@ -69,7 +69,9 @@ export class ApplicationsService {
 
     // Role-based scoping
     if (user.role === Role.APPLICANT) {
-      (where.AND as Prisma.ApplicationWhereInput[]).push({ applicantId: user.id });
+      (where.AND as Prisma.ApplicationWhereInput[]).push({
+        applicantId: user.id,
+      });
     }
 
     // Direct filters
@@ -81,14 +83,32 @@ export class ApplicationsService {
     }
 
     // Advanced Search
-    if (searchQuery && searchFields) {
-      const fields = searchFields.split(',').map(f => f.trim());
-      const searchConditions = fields.map(field => ({
-        [field]: { contains: searchQuery, mode: 'insensitive' }
-      }));
-      
+    if (searchQuery) {
+      const defaultFields = [
+        'refNumber',
+        'institutionName',
+        'registrationNumber',
+      ];
+      const fields = searchFields
+        ? searchFields.split(',').map((f) => f.trim())
+        : defaultFields;
+
+      const searchConditions = fields.map((field) => {
+        if (field.includes('.')) {
+          const [relation, subField] = field.split('.');
+          return {
+            [relation]: {
+              [subField]: { contains: searchQuery, mode: 'insensitive' },
+            },
+          };
+        }
+        return {
+          [field]: { contains: searchQuery, mode: 'insensitive' },
+        };
+      });
+
       (where.AND as Prisma.ApplicationWhereInput[]).push({
-        OR: searchConditions as Prisma.ApplicationWhereInput[]
+        OR: searchConditions,
       });
     }
 
@@ -115,7 +135,7 @@ export class ApplicationsService {
         page: Number(page),
         limit: Number(limit),
         totalPages: Math.ceil(total / Number(limit)),
-      }
+      },
     };
   }
 
