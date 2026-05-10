@@ -95,8 +95,8 @@ services:
     env_file:
       - .env.development
     ports:
-    # Dev apps use the same port on both sides because we can tell the app inside to listen on it!
-      - "${NEXT_FRONTEND_PORT}:${NEXT_FRONTEND_PORT}"
+    # Map host port from env to container port 3000 (default for Next.js dev server)
+      - "${NEXT_FRONTEND_PORT}:3000"
     environment:
       - NODE_ENV=development
     # Your browser accesses the backend from the host (Mac), so we use localhost:${BACKEND_PORT}.
@@ -116,18 +116,18 @@ services:
       - .env.${NODE_ENV}
     ports:
     # Production apps use dynamic host ports (0) to avoid conflicts and enable Zero Downtime (Blue/Green friendly)!
-      - "0:3000"
+      - "0:${NEXT_FRONTEND_PORT}"
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-      - PORT=3000
+      - PORT=${NEXT_FRONTEND_PORT}
     depends_on:
       - backend
     networks:
       - bnr_network
       - observability-network
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:$$PORT/ || exit 1"]
       interval: 3s
       timeout: 5s
       retries: 5
