@@ -12,6 +12,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm run build
 RUN npx esbuild prisma.config.ts --bundle --platform=node --format=cjs --outfile=prisma.config.js --footer:js="module.exports = module.exports.default || module.exports;"
+RUN pnpm prune --prod
 
 # Stage 2 — Run
 FROM node:20-alpine AS runner
