@@ -14,7 +14,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 
-@ApiTags('users')
+@ApiTags('Users')
 @ApiBearerAuth('access-token')
 @Controller('users')
 @Roles(Role.ADMIN)

@@ -5,7 +5,7 @@ import { Role } from '@prisma/client';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Public } from '../common/decorators/public.decorator';
 
-@ApiTags('database')
+@ApiTags('Database')
 @ApiBearerAuth('access-token')
 @Controller('database')
 export class DatabaseController {

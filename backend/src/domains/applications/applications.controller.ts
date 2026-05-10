@@ -35,7 +35,7 @@ import {
 } from '@nestjs/swagger';
 import { ApiOperation } from '@nestjs/swagger';
 
-@ApiTags('applications')
+@ApiTags('Applications')
 @ApiBearerAuth('access-token')
 @Controller('applications')
 export class ApplicationsController {
