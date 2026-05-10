@@ -70,7 +70,7 @@ export function LoginForm() {
               <Input
                 id="email"
                 type="email"
-                placeholder="name@example.com"
+                placeholder="name@organization.rw"
                 {...register('email')}
                 className={errors.email ? 'border-red-500' : ''}
               />

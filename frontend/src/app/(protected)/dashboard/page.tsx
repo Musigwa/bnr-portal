@@ -36,7 +36,6 @@ export default function DashboardPage() {
     try {
       await assignApp(id);
     } catch {
-      // Error is handled by the hook
     }
   };
 
@@ -44,7 +43,6 @@ export default function DashboardPage() {
     try {
       await approveApp({ id, notes: 'Quick approved from dashboard' });
     } catch {
-      // Error is handled by the hook
     }
   };
 

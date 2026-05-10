@@ -96,17 +96,14 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
       let currentRefNumber = initialData?.refNumber;
 
       if (currentAppId) {
-        // Update existing draft
         const res = await updateApp({ id: currentAppId, data });
         currentRefNumber = res.refNumber;
       } else {
-        // 1. Create Draft
         const res = await createDraft(data);
         currentAppId = res.id;
         currentRefNumber = res.refNumber;
       }
 
-      // 2. Upload new files (if any)
       if (files.length > 0) {
         for (const file of files) {
           const formData = new FormData();
@@ -115,21 +112,13 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
         }
       }
 
-      // 3. Conditional Submit
       if (shouldSubmit) {
         await submitApp(currentAppId!);
         notify.success('Application submitted successfully!');
         router.push('/applications');
       } else {
         notify.success('Application saved as draft');
-        // If it's just a save, stay or go to details
-        if (!applicationId) {
-          // If it was new, go to the new draft's detail page
-          router.push(`/applications/${currentRefNumber}`);
-        } else {
-          // If it was already an edit, just go back to details
-          router.push(`/applications/${currentRefNumber}`);
-        }
+        router.push(`/applications/${currentRefNumber}`);
       }
     } catch (error: unknown) {
       const err = error as { message?: string };
@@ -188,7 +177,6 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
         await deleteDoc({ applicationId: applicationId!, documentId: docId });
         setExistingDocs((prev) => prev.filter((d) => d.id !== docId));
       } catch {
-        // Error is handled by the hook's centralized notification
       }
     }
   };

@@ -51,7 +51,6 @@ export function ActionDialog({
       setNote('');
       onOpenChange(false);
     } catch {
-      // Error is handled by the caller or notification system
     } finally {
       setIsLoading(false);
     }
