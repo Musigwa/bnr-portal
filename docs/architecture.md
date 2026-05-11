@@ -112,28 +112,30 @@ When a document with the same filename is uploaded, the previous version is mark
 
 ---
 
-## 6. Production-Ready Vision & Roadmap
+## 6. Production-Ready Enhancements
 
-While not implemented in this current version due to time constraints, the following architectural enhancements reflect our vision and intention for an industrial-grade, scalable production platform:
+The following architectural and UX enhancements have been successfully implemented to ensure an industrial-grade, scalable production platform:
 
-### 6.1 Infrastructure & Deployment (High Priority)
+### 6.1 Implemented Infrastructure & UX Features
 
-- **Multi-Stage Docker Builds**: Optimize Dockerfiles to separate build dependencies from runtime, drastically reducing image sizes.
-- **Next.js Standalone Output**: Configure `next.config.js` with `output: 'standalone'` to produce a minimal production bundle without needing `node_modules` in the final image.
+- **Multi-Stage Docker Builds**: Dockerfiles have been optimized to separate build dependencies from runtime, utilizing Alpine base images and `pnpm` caching, which drastically reduces image sizes and build times.
+- **Next.js Standalone Output**: `next.config.ts` is configured with `output: 'standalone'` to produce a minimal production bundle without needing the full `node_modules` directory in the final container image.
+- **Advanced Frontend Analytics & UX**: The dashboard features complex data aggregation, dynamic custom date-range global filtering, and unified UI styling. 
+- **Inline Document Previews**: Leveraged native browser capabilities to render Blob Object URLs directly in new tabs, avoiding heavy external PDF/Image viewer libraries while keeping interactions entirely within the browser context.
+
+### 6.2 Future Roadmap (Security & Compliance)
+
 - **Object Storage**: Migrate from local filesystem storage to AWS S3 or MinIO, utilizing pre-signed URLs for secure document uploads and downloads.
-
-### 6.2 Security & Compliance
-
 - **Field-Level Encryption**: Implement encryption at rest for sensitive financial data (e.g., proposed capital, registration numbers) using Prisma middleware or native database encryption.
 - **Token Blacklisting**: Use Redis to store revoked tokens for immediate access token invalidation on logout.
 - **Granular Permissions (ABAC)**: Transition from simple Role-Based Access Control (RBAC) to Attribute-Based Access Control (ABAC) to allow policies like "Reviewer can only see applications in their assigned region".
 
-### 6.3 Performance & Scalability
+### 6.3 Future Roadmap (Performance & Scalability)
 
 - **Pagination**: Implement cursor-based pagination on all list endpoints (Applications, Audit Logs) to prevent performance degradation as data grows.
 - **Asynchronous Processing**: Offload non-blocking tasks like email notifications to a message queue (e.g., BullMQ with Redis).
 
-### 6.4 Observability & Testing
+### 6.4 Future Roadmap (Observability & Testing)
 
 - **Integration Testing**: Implement a dedicated test database (or use Testcontainers) to run end-to-end integration tests in CI.
 - **OpenTelemetry**: Integrate tracing and metrics to monitor system health and API latency in production.

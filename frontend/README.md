@@ -17,14 +17,14 @@ This is the frontend application for the Bank Licensing & Compliance Portal, bui
 
 ### Environment Variables
 
-Create a `.env.development` file in this directory with the following content:
+**Single Source of Truth:** The project is configured to use environment variables from the monorepo root. You do **not** need to create a `.env.development` file in this directory. 
+
+Instead, ensure you have a `.env.development` file in the **root directory** of the repository:
 
 ```env
 NEXT_FRONTEND_PORT=3000
 NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
-
-_(Point this to your backend URL)_.
 
 ### Run Development Server
 

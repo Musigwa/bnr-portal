@@ -16,7 +16,10 @@ This is the backend REST API for the Bank Licensing & Compliance Portal, built w
 - PostgreSQL (or run via Docker)
 
 ### Environment Variables
-Create a `.env` file in this directory (or use `.env.development` in root if running via Docker) with the following content:
+
+**Single Source of Truth:** The project is configured to use environment variables from the monorepo root. You do **not** need to create a `.env` file in this directory. 
+
+Instead, ensure you have a `.env.development` file in the **root directory** of the repository:
 
 ```env
 DB_HOST=127.0.0.1
