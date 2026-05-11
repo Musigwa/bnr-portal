@@ -16,15 +16,17 @@ export function useTableQuery() {
     const queryParams: Record<string, string | number | boolean | undefined> = {
       page: Number(params.page) || 1,
       limit: Number(params.limit) || 5,
-      searchQuery: params.searchQuery || '',
-      searchFields: params.searchFields || 'institutionName,refNumber',
     };
 
-    // Auto-uppercase all other string parameters (filters)
-    const protectedFields = ['searchQuery', 'searchFields', 'page', 'limit'];
+    // Enum filters (status, institutionType…) → uppercase for backend
+    // Free-text filters (refNumber, institutionName…) → preserve casing as typed
+    const freeTextFields = ['refNumber', 'institutionName', 'startDate', 'endDate'];
     Object.keys(params).forEach(key => {
-      if (!protectedFields.includes(key)) {
-        queryParams[key] = params[key]?.toUpperCase();
+      if (key === 'page' || key === 'limit') return; // already set as numbers above
+      if (freeTextFields.includes(key)) {
+        queryParams[key] = params[key]; // preserve as-is
+      } else {
+        queryParams[key] = params[key]?.toUpperCase(); // uppercase enum values
       }
     });
 
@@ -38,16 +40,14 @@ export function useTableQuery() {
       const defaults: Record<string, string> = {
         page: '1',
         limit: '5',
-        searchQuery: '',
-        searchFields: 'institutionName,refNumber'
       };
 
       Object.entries(newParams).forEach(([key, value]) => {
         let stringValue = value !== undefined && value !== null ? String(value) : '';
         
-        // Auto-lowercase all strings EXCEPT protected fields
-        const protectedFields = ['searchQuery', 'searchFields', 'page', 'limit'];
-        if (!protectedFields.includes(key) && typeof value === 'string') {
+        // Preserve casing for free-text fields; lowercase enum values for URL cleanliness
+        const freeTextFields = ['refNumber', 'institutionName', 'startDate', 'endDate'];
+        if (!freeTextFields.includes(key) && key !== 'page' && key !== 'limit' && typeof value === 'string') {
           stringValue = stringValue.toLowerCase();
         }
         

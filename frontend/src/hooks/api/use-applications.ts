@@ -18,6 +18,14 @@ export function useGetApplications(params: Record<string, string | number | bool
   });
 }
 
+export function useGetApplicationsStats(params: Record<string, string | number | boolean | undefined> = {}) {
+  return useQuery<{ total: number; pending: number; awaitingDecision: number; decided: number }>({
+    queryKey: [...APPLICATION_KEYS.all, 'stats', params],
+    queryFn: () => apiClient.get('/applications/stats', params),
+    placeholderData: keepPreviousData,
+  });
+}
+
 export function useGetApplicationById(id: string) {
   return useQuery<Application>({
     queryKey: APPLICATION_KEYS.details(id),

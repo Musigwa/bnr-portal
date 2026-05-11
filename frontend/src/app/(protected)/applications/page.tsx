@@ -18,10 +18,10 @@ export default function ApplicationsPage() {
   const { data: response, isLoading, isFetching, error, refetch } = useGetApplications({
     page: query.page,
     limit: query.limit,
-    searchQuery: query.searchQuery,
-    searchFields: query.searchFields,
     status: query.status,
     institutionType: query.institutionType,
+    refNumber: query.refNumber,
+    institutionName: query.institutionName,
   });
 
   if (isLoading) {
@@ -86,20 +86,18 @@ export default function ApplicationsPage() {
         onPageChange={(page) => setQuery({ page })}
         onPageSizeChange={(limit) => setQuery({ limit, page: 1 })}
         
-        // Search
-        searchQuery={String(query.searchQuery || '')}
-        onSearchChange={(searchQuery) => setQuery({ searchQuery, page: 1 })}
-        
-        // Filters
+        // Search & Filters
         activeFilters={{
           status: String(query.status || 'all'),
           institutionType: String(query.institutionType || 'all'),
+          refNumber: String(query.refNumber || ''),
+          institutionName: String(query.institutionName || ''),
         }}
         onFilterChange={(key, value) => {
-          setQuery({ [key]: value !== 'all' ? value : undefined, page: 1 });
+          setQuery({ [key]: value !== 'all' && value !== '' ? value : undefined, page: 1 });
         }}
         onClearFilters={() => {
-          setQuery({ status: undefined, institutionType: undefined, searchQuery: '', page: 1 });
+          setQuery({ status: undefined, institutionType: undefined, refNumber: undefined, institutionName: undefined, page: 1 });
         }}
       />
     </div>

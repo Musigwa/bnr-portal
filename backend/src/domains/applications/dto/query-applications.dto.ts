@@ -26,6 +26,14 @@ export class QueryApplicationsDto {
   @IsOptional()
   searchFields?: string;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  refNumber?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  institutionName?: string;
+
   @ApiEnumProperty({ enum: ApplicationStatus })
   status?: ApplicationStatus;
 

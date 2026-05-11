@@ -1,23 +1,22 @@
 'use client';
 
+import { FilterPopover } from '@/components/shared/filter-popover';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useApproveApplication, useAssignApplication, useGetApplications } from '@/hooks/api/use-applications';
-import { useAuth } from '@/providers/auth.provider';
+import { useApproveApplication, useAssignApplication, useGetApplications, useGetApplicationsStats } from '@/hooks/api/use-applications';
 import { useTableQuery } from '@/hooks/use-table-query';
-import { ApplicationStatus, Role } from '@/types';
+import { useAuth } from '@/providers/auth.provider';
+import { Role } from '@/types';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { DashboardStats } from './_components/dashboard-stats';
 import { DashboardTable } from './_components/dashboard-table';
-import { useQueryClient } from '@tanstack/react-query';
-import { FilterPopover } from '@/components/shared/filter-popover';
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
   const { query, setQuery } = useTableQuery();
 
-  // Fetch all applications unpaginated (limit: 1000) filtered by global date range to compute dashboard stats correctly
-  const { data: statsResponse, isLoading: statsLoading } = useGetApplications({ 
-    limit: 1000,
+  // Dashboard stats bounded by global date range
+  const { data: statsResponse, isLoading: statsLoading } = useGetApplicationsStats({ 
     startDate: query.startDate,
     endDate: query.endDate,
   });
@@ -30,6 +29,8 @@ export default function DashboardPage() {
     searchFields: query.searchFields,
     status: query.status,
     institutionType: query.institutionType,
+    refNumber: query.refNumber,
+    institutionName: query.institutionName,
     startDate: query.startDate,
     endDate: query.endDate,
   });
@@ -44,24 +45,16 @@ export default function DashboardPage() {
     }
   };
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (id: string, notes: string = 'Quick approved from dashboard') => {
     try {
-      await approveApp({ id, notes: 'Quick approved from dashboard' });
+      await approveApp({ id, notes });
     } catch {
     }
   };
 
-  // Keep track of counts and table data across query transitions to prevent one-frame flickers
+  // Cache state for seamless transitions
   const getInitialCounts = () => {
-    const data = statsResponse?.data || [];
-    return {
-      total: statsResponse?.meta?.total || data.length,
-      pending: data.filter(a => a.status === ApplicationStatus.SUBMITTED).length,
-      awaitingDecision: data.filter(a => a.status === ApplicationStatus.REVIEWED).length,
-      decided: data.filter(a => 
-        a.status === ApplicationStatus.APPROVED || a.status === ApplicationStatus.REJECTED
-      ).length
-    };
+    return statsResponse || { total: 0, pending: 0, awaitingDecision: 0, decided: 0 };
   };
 
   const [cachedCounts, setCachedCounts] = useState(getInitialCounts);
@@ -70,22 +63,14 @@ export default function DashboardPage() {
     meta: tableResponse?.meta || { total: 0, page: 1, limit: 10, totalPages: 0 }
   }));
 
-  // Sync cache with latest success data directly during render (standard React pattern for prop-to-state adjustment)
+  // Synchronize derived state
   const [prevStatsResponse, setPrevStatsResponse] = useState(statsResponse);
   const [prevTableResponse, setPrevTableResponse] = useState(tableResponse);
 
   if (statsResponse !== prevStatsResponse) {
     setPrevStatsResponse(statsResponse);
-    if (statsResponse?.data) {
-      const data = statsResponse.data;
-      setCachedCounts({
-        total: statsResponse.meta?.total || data.length,
-        pending: data.filter(a => a.status === ApplicationStatus.SUBMITTED).length,
-        awaitingDecision: data.filter(a => a.status === ApplicationStatus.REVIEWED).length,
-        decided: data.filter(a => 
-          a.status === ApplicationStatus.APPROVED || a.status === ApplicationStatus.REJECTED
-        ).length
-      });
+    if (statsResponse) {
+      setCachedCounts(statsResponse);
     }
   }
 
@@ -172,12 +157,14 @@ export default function DashboardPage() {
         activeFilters={{
           status: String(query.status || 'all'),
           institutionType: String(query.institutionType || 'all'),
+          refNumber: String(query.refNumber || ''),
+          institutionName: String(query.institutionName || ''),
         }}
         onFilterChange={(key, value) => {
-          setQuery({ [key]: value !== 'all' ? value : undefined, page: 1 });
+          setQuery({ [key]: value !== 'all' && value !== '' ? value : undefined, page: 1 });
         }}
         onClearFilters={() => {
-          setQuery({ status: undefined, institutionType: undefined, searchQuery: '', page: 1 });
+          setQuery({ status: undefined, institutionType: undefined, refNumber: undefined, institutionName: undefined, searchQuery: '', page: 1 });
         }}
       />
     </div>

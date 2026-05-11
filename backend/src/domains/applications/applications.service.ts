@@ -58,6 +58,8 @@ export class ApplicationsService {
       searchFields,
       status,
       institutionType,
+      refNumber,
+      institutionName,
       startDate,
       endDate,
     } = query;
@@ -82,6 +84,16 @@ export class ApplicationsService {
     }
     if (institutionType) {
       (where.AND as Prisma.ApplicationWhereInput[]).push({ institutionType });
+    }
+    if (refNumber) {
+      (where.AND as Prisma.ApplicationWhereInput[]).push({
+        refNumber: { contains: refNumber, mode: 'insensitive' },
+      });
+    }
+    if (institutionName) {
+      (where.AND as Prisma.ApplicationWhereInput[]).push({
+        institutionName: { contains: institutionName, mode: 'insensitive' },
+      });
     }
     if (startDate || endDate) {
       const dateFilter: Prisma.DateTimeFilter = {};
@@ -153,6 +165,69 @@ export class ApplicationsService {
         totalPages: Math.ceil(total / Number(limit)),
       },
     };
+  }
+
+  async getStats(user: User, query: QueryApplicationsDto) {
+    const { startDate, endDate } = query;
+    const where: Prisma.ApplicationWhereInput = { AND: [] };
+
+    // Role-based scoping ensures users only see stats for apps they can access
+    if (user.role === Role.APPLICANT) {
+      (where.AND as Prisma.ApplicationWhereInput[]).push({
+        applicantId: user.id,
+      });
+    }
+
+    // Global date filters
+    if (startDate || endDate) {
+      const dateFilter: Prisma.DateTimeFilter = {};
+      if (startDate) {
+        dateFilter.gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        dateFilter.lte = end;
+      }
+      (where.AND as Prisma.ApplicationWhereInput[]).push({
+        createdAt: dateFilter,
+      });
+    }
+
+    const groups = await (
+      this.extendedPrisma as PrismaClient
+    ).application.groupBy({
+      by: ['status'],
+      where: (where.AND as any[]).length > 0 ? where : undefined,
+      _count: {
+        _all: true,
+      },
+    });
+
+    const stats = {
+      total: 0,
+      pending: 0,
+      awaitingDecision: 0,
+      decided: 0,
+    };
+
+    groups.forEach((group) => {
+      const count = group._count._all;
+      stats.total += count;
+
+      if (group.status === ApplicationStatus.SUBMITTED) {
+        stats.pending += count;
+      } else if (group.status === ApplicationStatus.REVIEWED) {
+        stats.awaitingDecision += count;
+      } else if (
+        group.status === ApplicationStatus.APPROVED ||
+        group.status === ApplicationStatus.REJECTED
+      ) {
+        stats.decided += count;
+      }
+    });
+
+    return stats;
   }
 
   async findById(id: string): Promise<Application | null> {

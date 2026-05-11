@@ -1,16 +1,25 @@
-import { Application, ApplicationStatus, Role } from '@/types';
-import { StatusBadge } from '@/components/shared/status-badge';
+import { DataTable } from '@/components/shared/table';
 import { Button } from '@/components/ui/button';
-import { UserPlus, CheckCircle2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Application, Role } from '@/types';
 import { useRouter } from 'next/navigation';
-import { DataTable, ColumnDef, FilterDef } from '@/components/shared/table';
+import { useState } from 'react';
+import { useDashboardColumns } from './table-columns';
 
 interface DashboardTableProps {
   applications: Application[];
   userRole: Role;
   isLoading: boolean;
   onAssign?: (id: string) => void;
-  onApprove?: (id: string) => void;
+  onApprove?: (id: string, notes?: string) => void;
   
   // Pagination & Filtering Props
   currentPage: number;
@@ -40,146 +49,81 @@ export function DashboardTable({
   pageSize,
   onPageChange,
   onPageSizeChange,
-  searchQuery,
-  onSearchChange,
   activeFilters,
   onFilterChange,
   onClearFilters,
 }: DashboardTableProps) {
   const router = useRouter();
+  const [approveDialogApp, setApproveDialogApp] = useState<Application | null>(null);
+  const [approveNotes, setApproveNotes] = useState('');
 
   const navigateToApplication = (refNumber: string) => {
     router.push(`/applications/${refNumber}`);
   };
 
-  const columns: ColumnDef<Application>[] = [
-    { 
-      key: 'refNumber', 
-      label: 'Ref#', 
-      className: 'font-semibold pl-6',
-      render: (app) => app.refNumber 
-    },
-    { key: 'institutionName', label: 'Institution' },
-    { 
-      key: 'institutionType', 
-      label: 'Type',
-      render: (app) => (
-        <span className="capitalize text-muted-foreground">
-          {app.institutionType.toLowerCase().replace('_', ' ')}
-        </span>
-      )
-    },
-    { 
-      key: 'status', 
-      label: 'Status',
-      render: (app) => <StatusBadge status={app.status} />
-    },
-    { 
-      key: 'date', 
-      label: 'Submitted',
-      className: 'text-muted-foreground',
-      render: (app) => {
-        const date = app.submittedAt || app.createdAt;
-        return date ? new Intl.DateTimeFormat('en-US', { 
-          day: 'numeric', 
-          month: 'short', 
-          year: 'numeric' 
-        }).format(new Date(date)) : 'N/A';
-      }
-    },
-    {
-      key: 'reviewer',
-      label: 'Reviewer',
-      render: (app) => app.reviewer?.fullName || (
-        <span className="text-muted-foreground italic text-xs">Unassigned</span>
-      )
-    },
-    {
-      key: 'actions',
-      label: '',
-      className: 'text-right pr-6',
-      render: (app) => (
-        <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
-          {onAssign && app.status === ApplicationStatus.SUBMITTED && !app.reviewerId && userRole === Role.REVIEWER && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="!h-8 !py-0 bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary shadow-none"
-              onClick={() => onAssign(app.id)}
-            >
-              <UserPlus className="mr-1.5 h-3 w-3" />
-              Assign
-            </Button>
-          )}
-          {onApprove && app.status === ApplicationStatus.REVIEWED && userRole === Role.APPROVER && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="!h-8 !py-0 text-green-600 dark:text-green-400 hover:bg-green-600/10 border-green-600/20 shadow-none"
-              onClick={() => onApprove(app.id)}
-            >
-              <CheckCircle2 className="mr-1.5 h-3 w-3" />
-              Approve
-            </Button>
-          )}
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="!h-8 !py-0"
-            onClick={() => router.push(`/applications/${app.refNumber}`)}
-          >
-            View
-          </Button>
-        </div>
-      )
-    }
-  ];
-
-  const filters: FilterDef[] = [
-    {
-      key: 'status',
-      label: 'Status',
-      options: Object.values(ApplicationStatus).filter(s => s !== ApplicationStatus.DRAFT).map(s => ({
-        label: s.replace('_', ' ').toLowerCase(),
-        value: s
-      }))
-    },
-    {
-      key: 'institutionType',
-      label: 'Institution Type',
-      options: [
-        { label: 'Commercial Bank', value: 'COMMERCIAL_BANK' },
-        { label: 'Microfinance', value: 'MICROFINANCE' },
-        { label: 'Digital Bank', value: 'DIGITAL_BANK' }
-      ]
-    }
-  ];
+  const columns = useDashboardColumns({
+    userRole,
+    onAssign,
+    onApprove,
+    setApproveDialogApp,
+    setApproveNotes,
+    router,
+  });
 
   return (
-    <DataTable
-      data={applications}
-      columns={columns}
-      onRowClick={(app) => navigateToApplication(app.refNumber)}
-      isLoading={isLoading}
-      
-      // Toolbar props
-      searchQuery={searchQuery}
-      onSearchChange={onSearchChange}
-      searchKey="institutionName"
-      searchPlaceholder="Search applications by name..."
-      filters={filters}
-      activeFilters={activeFilters}
-      onFilterChange={onFilterChange}
-      onClear={onClearFilters}
-      
-      // Pagination props
-      currentPage={currentPage}
-      totalPages={totalPages}
-      totalResults={totalResults}
-      pageSize={pageSize}
-      onPageChange={onPageChange}
-      onPageSizeChange={onPageSizeChange}
-    />
+    <>
+      <DataTable
+        data={applications}
+        columns={columns}
+        onRowClick={(app) => navigateToApplication(app.refNumber)}
+        isLoading={isLoading}
+        
+        activeFilters={activeFilters}
+        onFilterChange={onFilterChange}
+        onClear={onClearFilters}
+        
+        // Pagination props
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalResults={totalResults}
+        pageSize={pageSize}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+      />
+
+      <Dialog open={!!approveDialogApp} onOpenChange={(open) => !open && setApproveDialogApp(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Approve Application</DialogTitle>
+            <DialogDescription>
+              You are about to approve application <span className="font-semibold text-foreground">{approveDialogApp?.refNumber}</span>. You can optionally add notes below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea 
+              placeholder="Add approval notes (optional)..."
+              value={approveNotes}
+              onChange={(e) => setApproveNotes(e.target.value)}
+              className="min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApproveDialogApp(null)}>Cancel</Button>
+            <Button 
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={() => {
+                if (approveDialogApp && onApprove) {
+                  onApprove(approveDialogApp.id, approveNotes);
+                  setApproveDialogApp(null);
+                }
+              }}
+            >
+              Approve Application
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

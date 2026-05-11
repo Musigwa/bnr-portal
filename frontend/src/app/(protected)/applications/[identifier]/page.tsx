@@ -1,32 +1,29 @@
 'use client';
 
-import { StatusBadge } from '@/components/shared/status-badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AuditTimeline } from './_components/audit-timeline';
 import { DocumentList } from './_components/document-list';
 import { ActionDialog } from '@/components/shared/action-dialog';
 import { useAuth } from '@/providers/auth.provider';
-import { notify } from '@/lib/notifications';
-import { ApplicationStatus } from '@/types';
-import { 
-  AlertCircle, Building2, Calendar, CheckCircle2, Clock, Download, 
-  FileEdit, FileText, MessageSquare, Send, UserPlus, XCircle 
-} from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { ApplicationStatus, Role } from '@/types';
+import { AlertCircle, Download, FileText, MessageSquare } from 'lucide-react';
+import { useParams } from 'next/navigation';
 import { useState } from 'react';
-import { 
-  useApproveApplication, useAssignApplication, useCompleteReview, 
-  useGetApplicationAudit, useGetApplicationById, useRejectApplication, 
-  useRequestInfo, useSubmitApplication, useResubmitApplication
-} from '@/hooks/api/use-applications';
+import { toast } from 'sonner';
+import { apiClient } from '@/lib/api-client';
+import { useGetApplicationAudit, useGetApplicationById } from '@/hooks/api/use-applications';
+
+// Extracted Sub-Components
+import { ApplicationHeader } from './_components/application-header';
+import { ApplicationActions } from './_components/application-actions';
+import { ApplicationDetailsCard } from './_components/application-details-card';
+import { ApplicationSidebar } from './_components/application-sidebar';
 
 export default function ApplicationDetailsPage() {
   const { identifier } = useParams() as { identifier: string };
   const { user } = useAuth();
-  const router = useRouter();
   
   const [actionDialog, setActionDialog] = useState<{
     open: boolean;
@@ -45,28 +42,33 @@ export default function ApplicationDetailsPage() {
     confirmAction: async () => {},
   });
 
-  const handleAction = async (action: () => Promise<unknown>, successMsg: string) => {
+  const { data: app, isLoading: appLoading, isError } = useGetApplicationById(identifier);
+  const { data: auditLogs } = useGetApplicationAudit(identifier);
+
+  const handleDownloadDocument = async (documentId: string, fileName: string) => {
     try {
-      await action();
-      notify.success(successMsg);
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      notify.error(err.message || 'Action failed');
-      throw error;
+      const blob = await apiClient.download(`/applications/${app?.id}/documents/${documentId}/download`);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (error) {
+      toast.error('Failed to download document');
     }
   };
 
-  const { data: app, isLoading: appLoading, isError } = useGetApplicationById(identifier);
-  const { data: auditLogs } = useGetApplicationAudit(identifier);
-  const isInternal = user?.role !== 'APPLICANT';
-
-  const { mutateAsync: assignApp } = useAssignApplication();
-  const { mutateAsync: approveApp } = useApproveApplication();
-  const { mutateAsync: requestInfo } = useRequestInfo();
-  const { mutateAsync: completeReview } = useCompleteReview();
-  const { mutateAsync: rejectApp } = useRejectApplication();
-  const { mutateAsync: submitApp } = useSubmitApplication();
-  const { mutateAsync: resubmit } = useResubmitApplication();
+  const handleDownloadAll = async () => {
+    if (!app?.documents || app.documents.length === 0) return;
+    
+    for (const doc of app.documents) {
+      await handleDownloadDocument(doc.id, doc.fileName);
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+  };
 
   if (appLoading) {
     return (
@@ -92,183 +94,15 @@ export default function ApplicationDetailsPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header */}
+      {/* Header & Actions */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b pb-8">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">{app.institutionName}</h1>
-            <StatusBadge status={app.status} />
-          </div>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground text-sm font-medium">
-            <span className="flex items-center gap-1.5"><FileText className="h-4 w-4 text-muted-foreground/70" /> {app.refNumber}</span>
-            <span className="flex items-center gap-1.5"><Building2 className="h-4 w-4 text-muted-foreground/70" /> {app.institutionType.replace('_', ' ')}</span>
-            <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-muted-foreground/70" /> {new Date(app.createdAt).toLocaleDateString()}</span>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {/* STAFF ACTIONS */}
-          {isInternal && (
-            <>
-              {app.status === ApplicationStatus.SUBMITTED && !app.reviewerId && (
-                <Button 
-                  className="w-full sm:w-auto shadow-sm"
-                  onClick={() => setActionDialog({
-                    open: true,
-                    title: 'Assign to Me',
-                    description: 'You will be responsible for reviewing this application. This action will change the status to Under Review.',
-                    confirmText: 'Assign Application',
-                    confirmAction: async () => { 
-                      await handleAction(() => assignApp(app.id), 'Application assigned successfully'); 
-                    }
-                  })}
-                >
-                  <UserPlus className="mr-2 h-4 w-4" /> Assign to Me
-                </Button>
-              )}
-              
-              {(app.status === ApplicationStatus.SUBMITTED || app.status === ApplicationStatus.UNDER_REVIEW) && app.reviewerId === user?.id && (
-                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 sm:flex-none shadow-sm"
-                    onClick={() => setActionDialog({
-                      open: true,
-                      title: 'Request Information',
-                      description: 'The application will be sent back to the applicant for updates. Please specify what information is missing.',
-                      confirmText: 'Request Info',
-                      requireNote: true,
-                      noteLabel: 'Reason for Request',
-                      notePlaceholder: 'Describe what needs to be updated...',
-                      confirmAction: async (note) => { 
-                        await handleAction(() => requestInfo({ id: app.id, notes: note }), 'Information request sent'); 
-                      }
-                    })}
-                  >
-                    <FileEdit className="mr-2 h-4 w-4" /> Request Info
-                  </Button>
-                  <Button 
-                    className="flex-1 sm:flex-none shadow-sm"
-                    onClick={() => setActionDialog({
-                      open: true,
-                      title: 'Complete Review',
-                      description: 'Your review will be finalized and forwarded to an approver for the final decision.',
-                      confirmText: 'Complete Review',
-                      requireNote: true,
-                      noteLabel: 'Reviewer Notes',
-                      notePlaceholder: 'Summarize your findings and recommendations...',
-                      confirmAction: async (note) => { 
-                        await handleAction(() => completeReview({ id: app.id, reviewerNotes: note }), 'Review completed successfully'); 
-                      }
-                    })}
-                  >
-                    <CheckCircle2 className="mr-2 h-4 w-4" /> Complete Review
-                  </Button>
-                </div>
-              )}
-
-              {app.status === ApplicationStatus.REVIEWED && user?.role === 'APPROVER' && (
-                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                  <Button 
-                    variant="destructive" 
-                    className="flex-1 sm:flex-none shadow-sm"
-                    onClick={() => setActionDialog({
-                      open: true,
-                      title: 'Reject Application',
-                      description: 'This application will be rejected. This action is final and will notify the applicant.',
-                      confirmText: 'Reject Application',
-                      variant: 'destructive',
-                      requireNote: true,
-                      noteLabel: 'Rejection Reason',
-                      notePlaceholder: 'Clearly state why the application is being rejected...',
-                      confirmAction: async (note) => { 
-                        await handleAction(() => rejectApp({ id: app.id, rejectionReason: note }), 'Application rejected'); 
-                      }
-                    })}
-                  >
-                    <XCircle className="mr-2 h-4 w-4" /> Reject
-                  </Button>
-                  <Button 
-                    className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 shadow-sm" 
-                    onClick={() => setActionDialog({
-                      open: true,
-                      title: 'Approve Application',
-                      description: 'This will grant the license to the institution. This action is final.',
-                      confirmText: 'Approve Application',
-                      variant: 'success',
-                      requireNote: true,
-                      noteLabel: 'Final Decision Notes',
-                      notePlaceholder: 'Any final comments on this approval...',
-                      confirmAction: async (note) => { 
-                        await handleAction(() => approveApp({ id: app.id, notes: note }), 'Application approved successfully!'); 
-                      }
-                    })}
-                  >
-                    <CheckCircle2 className="mr-2 h-4 w-4" /> Approve Application
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* APPLICANT ACTIONS */}
-          {!isInternal && (
-            <>
-              {app.status === ApplicationStatus.DRAFT && (
-                <>
-                  <Button 
-                    variant="outline"
-                    className="w-full sm:w-auto shadow-sm"
-                    onClick={() => router.push(`/applications/${app.refNumber}/edit`)}
-                  >
-                    <FileEdit className="mr-2 h-4 w-4" /> Edit Details
-                  </Button>
-                  <Button 
-                    className="w-full sm:w-auto shadow-sm"
-                    onClick={() => setActionDialog({
-                      open: true,
-                      title: 'Submit Application',
-                      description: 'Are you sure you want to submit this application? You will not be able to edit it after submission.',
-                      confirmText: 'Submit Now',
-                      confirmAction: async () => { 
-                        await handleAction(() => submitApp(app.id), 'Application submitted successfully!'); 
-                        router.push('/applications');
-                      }
-                    })}
-                  >
-                    <Send className="mr-2 h-4 w-4" /> Submit Application
-                  </Button>
-                </>
-              )}
-              {app.status === ApplicationStatus.PENDING_INFO && (
-                <>
-                  <Button 
-                    variant="outline"
-                    className="w-full sm:w-auto shadow-sm"
-                    onClick={() => router.push(`/applications/${app.refNumber}/edit`)}
-                  >
-                    <FileEdit className="mr-2 h-4 w-4" /> Edit Details
-                  </Button>
-                  <Button 
-                    className="w-full sm:w-auto shadow-sm"
-                    onClick={() => setActionDialog({
-                      open: true,
-                      title: 'Resubmit Application',
-                      description: 'Have you provided all the requested information and documents? This will send the application back for review.',
-                      confirmText: 'Resubmit Now',
-                      confirmAction: async () => { 
-                        await handleAction(() => resubmit(app.id), 'Application resubmitted successfully!'); 
-                        router.push('/applications');
-                      }
-                    })}
-                  >
-                    <Send className="mr-2 h-4 w-4" /> Resubmit Application
-                  </Button>
-                </>
-              )}
-            </>
-          )}
-        </div>
+        <ApplicationHeader app={app} />
+        <ApplicationActions 
+          app={app} 
+          userRole={user?.role || Role.APPLICANT} 
+          userId={user?.id}
+          setActionDialog={setActionDialog} 
+        />
       </div>
 
       <div className="grid gap-6 md:grid-cols-8">
@@ -291,25 +125,7 @@ export default function ApplicationDetailsPage() {
             </Card>
           )}
 
-          <Card className="border-border overflow-hidden shadow-sm">
-            <CardHeader className="bg-muted/30 border-b">
-              <CardTitle className="text-xl">Application details</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Registration Number</p>
-                <p className="text-foreground font-bold text-lg">{app.registrationNumber}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Proposed Capital</p>
-                <p className="text-foreground font-bold text-lg">{new Intl.NumberFormat('en-RW', { style: 'currency', currency: 'RWF' }).format(app.proposedCapital)}</p>
-              </div>
-              <div className="md:col-span-2 space-y-2 pt-4 border-t border-border/50 mt-2">
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Applicant Notes</p>
-                <p className="text-foreground/80 leading-relaxed">{app.applicantNotes || 'No notes provided.'}</p>
-              </div>
-            </CardContent>
-          </Card>
+          <ApplicationDetailsCard app={app} />
 
           <Card className="border-border overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between bg-muted/30 border-b">
@@ -322,60 +138,31 @@ export default function ApplicationDetailsPage() {
                   </span>
                 )}
               </div>
-              <Button variant="outline" size="sm" className="h-9 px-4 font-bold shadow-sm">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-9 px-4 font-bold shadow-sm"
+                onClick={handleDownloadAll}
+                disabled={!app.documents || app.documents.length === 0}
+              >
                 <Download className="mr-2 h-4 w-4" /> Download All
               </Button>
             </CardHeader>
             <CardContent>
               <DocumentList 
                 documents={app.documents || []} 
-                onDownload={() => {}} 
+                onDownload={handleDownloadDocument}
               />
             </CardContent>
           </Card>
         </div>
 
         {/* Sidebar */}
-        <div className="md:col-span-3 space-y-6">
-          {/* Sidebars for STAFF ONLY */}
-          {isInternal && (
-            <Card className="border-border overflow-hidden">
-              <CardHeader className="bg-muted/30 border-b">
-                <CardTitle className="text-xl">Assignment</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                    <UserPlus className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Reviewer</p>
-                    <p className="text-sm text-muted-foreground">{app.reviewer?.fullName || 'Not assigned'}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Approver</p>
-                    <p className="text-sm text-muted-foreground">{app.approver?.fullName || 'Not decided'}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <Card className="border-border overflow-hidden">
-            <CardHeader className="bg-muted/30 border-b flex flex-row items-center gap-2">
-              <Clock className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-xl">Audit History</CardTitle>
-            </CardHeader>
-            <CardContent className="max-h-[558px] overflow-y-auto custom-scrollbar scroll-shadows">
-              <AuditTimeline logs={auditLogs || []} />
-            </CardContent>
-          </Card>
-        </div>
+        <ApplicationSidebar 
+          app={app} 
+          auditLogs={auditLogs || []} 
+          userRole={user?.role || Role.APPLICANT} 
+        />
       </div>
 
       <ActionDialog 

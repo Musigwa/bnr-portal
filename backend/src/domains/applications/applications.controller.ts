@@ -59,6 +59,16 @@ export class ApplicationsController {
     return this.service.findAll(user, query);
   }
 
+  @ApiOperation({
+    summary: 'Get aggregated application statistics for dashboard',
+  })
+  @ApiOkResponse({ description: 'Statistics object' })
+  @Get('stats')
+  @Roles(Role.APPLICANT, Role.REVIEWER, Role.APPROVER, Role.ADMIN)
+  getStats(@CurrentUser() user: User, @Query() query: QueryApplicationsDto) {
+    return this.service.getStats(user, query);
+  }
+
   @ApiOperation({ summary: 'Get application by ID' })
   @ApiNotFoundResponse({ description: 'Application not found' })
   @Get(':id')

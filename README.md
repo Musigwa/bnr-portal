@@ -60,8 +60,11 @@ This is the fastest way for rapid iteration. We use `pnpm` workspaces to manage 
 
 The application is automatically deployed to production via GitHub Actions.
 
-- **Frontend**: [Web App](https://bnr-portal.212.47.77.2.nip.io)
-- **API Docs**: [Swagger UI](https://api.bnr-portal.212.47.77.2.nip.io/docs)
+> **⚠️ Important SSL Certificate Notice**  
+> Since our deployment uses `nip.io` with self-signed certificates, your browser will initially block connections to the backend API. To use the application, you **must** first access the backend Swagger UI, accept the security warning ("Proceed to unsafe"), and **try out at least one endpoint** (e.g., a simple GET request) to unlock full access before opening the Web App.
+> 
+> 1. **API Docs (Access First)**: [Swagger UI](https://api.bnr-portal.212.47.77.2.nip.io/docs)
+> 2. **Frontend**: [Web App](https://bnr-portal.212.47.77.2.nip.io)
 
 ## Documentation
 

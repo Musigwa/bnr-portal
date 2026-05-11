@@ -148,4 +148,15 @@ export const apiClient = {
   delete: <T>(endpoint: string) => request<T>(endpoint, { method: 'DELETE' }),
   upload: <T>(endpoint: string, formData: FormData) =>
     request<T>(endpoint, { method: 'POST', body: formData }),
+  download: async (endpoint: string): Promise<Blob> => {
+    // We cannot use the standard request() wrapper because it enforces res.json()
+    // We manually fetch the token and return the blob directly.
+    const token = await getValidToken().catch(() => null);
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    
+    const res = await fetch(`${API_URL}${endpoint}`, { headers });
+    if (!res.ok) throw new Error('Failed to download file');
+    return res.blob();
+  },
 };

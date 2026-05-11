@@ -1,11 +1,9 @@
 'use client';
 
-import { StatusBadge } from '@/components/shared/status-badge';
-import { ColumnDef, DataTable, FilterDef } from '@/components/shared/table';
-import { Button } from '@/components/ui/button';
+import { DataTable } from '@/components/shared/table';
 import { Application, ApplicationStatus, Role } from '@/types';
-import { CheckCircle2, Eye, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useApplicationColumns } from './table-columns';
 
 interface ApplicationTableProps {
   applications: Application[];
@@ -15,22 +13,20 @@ interface ApplicationTableProps {
   isActionLoading?: boolean;
   isLoading?: boolean;
   
-  // Pagination & Filtering Props
+  // Pagination props
   currentPage: number;
   totalPages: number;
   totalResults: number;
   pageSize: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
-  
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  
+
+  // Inline column filter props
   activeFilters: Record<string, string>;
   onFilterChange: (key: string, value: string) => void;
   onClearFilters: () => void;
 
-  // New styling/layout props
+  // Layout props
   className?: string;
   maxHeight?: string;
 }
@@ -47,15 +43,12 @@ export function ApplicationTable({
   pageSize,
   onPageChange,
   onPageSizeChange,
-  searchQuery,
-  onSearchChange,
   activeFilters,
   onFilterChange,
   onClearFilters,
   isLoading,
 }: ApplicationTableProps) {
   const router = useRouter();
-  const isStaff = role !== Role.APPLICANT;
 
   const getActionLabel = (status: ApplicationStatus) => {
     switch (status) {
@@ -69,111 +62,15 @@ export function ApplicationTable({
     router.push(`/applications/${refNumber}`);
   };
 
-  const columns: ColumnDef<Application>[] = [
-    { 
-      key: 'refNumber', 
-      label: 'Ref#', 
-      className: 'font-medium pl-6',
-      render: (app) => app.refNumber 
-    },
-    { key: 'institutionName', label: 'Institution' },
-    { 
-      key: 'institutionType', 
-      label: 'Type',
-      render: (app) => (
-        <span className="capitalize">
-          {app.institutionType.toLowerCase().replace('_', ' ')}
-        </span>
-      )
-    },
-    { 
-      key: 'status', 
-      label: 'Status',
-      render: (app) => <StatusBadge status={app.status} />
-    },
-    { 
-      key: 'date', 
-      label: isStaff ? 'Submitted' : 'Date',
-      className: 'text-muted-foreground',
-      render: (app) => {
-        const date = app.submittedAt || app.createdAt;
-        return date ? new Intl.DateTimeFormat('en-US', { 
-          day: 'numeric', 
-          month: 'short', 
-          year: 'numeric' 
-        }).format(new Date(date)) : 'N/A';
-      }
-    },
-    ...(isStaff ? [{
-      key: 'reviewer',
-      label: 'Reviewer',
-      render: (app: Application) => app.reviewer?.fullName || (
-        <span className="text-muted-foreground italic text-xs">Unassigned</span>
-      )
-    }] : []),
-    {
-      key: 'actions',
-      label: '',
-      className: 'text-right pr-6',
-      render: (app) => (
-        <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
-          {isStaff && onAssign && app.status === ApplicationStatus.SUBMITTED && !app.reviewerId && role === Role.REVIEWER && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="!h-8 !py-0 bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary shadow-none"
-              onClick={() => onAssign(app.id)}
-              disabled={isActionLoading}
-            >
-              <UserPlus className="mr-1.5 h-3 w-3" />
-              Assign
-            </Button>
-          )}
-          {isStaff && onApprove && app.status === ApplicationStatus.REVIEWED && role === Role.APPROVER && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="!h-8 !py-0 text-green-600 dark:text-green-400 hover:bg-green-600/10 border-green-600/20 shadow-none"
-              onClick={() => onApprove(app.id)}
-              disabled={isActionLoading}
-            >
-              <CheckCircle2 className="mr-1.5 h-3 w-3" />
-              Approve
-            </Button>
-          )}
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="!h-8 !py-0"
-            onClick={() => router.push(`/applications/${app.refNumber}`)}
-          >
-            <Eye className="mr-1.5 h-4 w-4" /> 
-            {isStaff ? 'View' : getActionLabel(app.status)}
-          </Button>
-        </div>
-      )
-    }
-  ];
+  const columns = useApplicationColumns({
+    role,
+    onAssign,
+    onApprove,
+    isActionLoading,
+    router,
+    getActionLabel,
+  });
 
-  const filters: FilterDef[] = [
-    {
-      key: 'institutionType',
-      label: 'Type',
-      options: [
-        { label: 'Commercial Bank', value: 'COMMERCIAL_BANK' },
-        { label: 'Microfinance', value: 'MICROFINANCE' },
-        { label: 'Digital Bank', value: 'DIGITAL_BANK' },
-      ]
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      options: Object.values(ApplicationStatus).filter(s => s !== ApplicationStatus.DRAFT).map(s => ({
-        label: s.replace('_', ' ').toLowerCase(),
-        value: s
-      }))
-    }
-  ];
 
   return (
     <DataTable
@@ -181,17 +78,12 @@ export function ApplicationTable({
       columns={columns}
       onRowClick={(app) => navigateToApplication(app.refNumber)}
       isLoading={isLoading}
-      
-      // Toolbar props
-      searchQuery={searchQuery}
-      onSearchChange={onSearchChange}
-      searchKey="institutionName"
-      searchPlaceholder="Search applications by name..."
-      filters={filters}
+
+      // Inline column filter props
       activeFilters={activeFilters}
       onFilterChange={onFilterChange}
       onClear={onClearFilters}
-      
+
       // Pagination props
       currentPage={currentPage}
       totalPages={totalPages}

@@ -5,6 +5,9 @@ export interface ColumnDef<T> {
   label: string;
   render?: (item: T) => ReactNode;
   className?: string;
+  filterType?: 'input' | 'select';
+  filterKey?: string;
+  filterOptions?: FilterOption[];
 }
 
 export interface FilterOption {
@@ -19,15 +22,15 @@ export interface FilterDef {
 }
 
 export interface DataTableToolbarProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
   searchPlaceholder?: string;
   searchKey?: string;
-  filters: FilterDef[];
+  filters?: FilterDef[];
   activeFilters: Record<string, string>;
   onFilterChange: (key: string, value: string) => void;
   onClear: () => void;
-  totalResults: number;
+  totalResults?: number;
 }
 
 export interface DataTablePaginationProps {
