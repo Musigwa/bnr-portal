@@ -124,12 +124,7 @@ if [ "$SERVICE" = "backend" ]; then
   DOMAIN="api.${APP_NAME}.${DOMAIN_ROOT}"
 fi
 
-# Use internal self-signed TLS only for nip.io domains to avoid ACME rate limits
-if [[ "$DOMAIN" == *"nip.io"* ]]; then
-  TLS_LINE="    tls internal"
-else
-  TLS_LINE=""
-fi
+TLS_LINE=""
 
 # Write to a temp file first
 cat <<EOF > /tmp/caddy_temp
