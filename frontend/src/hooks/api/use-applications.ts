@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { Application, AuditLog } from '@/types';
 import { notify } from '@/lib/notifications';
@@ -14,6 +14,7 @@ export function useGetApplications(params: Record<string, string | number | bool
   return useQuery<{ data: Application[]; meta: { total: number; page: number; limit: number; totalPages: number } }>({
     queryKey: [...APPLICATION_KEYS.lists(), params],
     queryFn: () => apiClient.get('/applications', params),
+    placeholderData: keepPreviousData,
   });
 }
 

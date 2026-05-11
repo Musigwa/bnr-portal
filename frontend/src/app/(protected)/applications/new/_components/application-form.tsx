@@ -9,8 +9,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { FieldErrors, ResolverResult, useForm, useWatch } from 'react-hook-form';
 import * as z from 'zod';
-import { useCreateApplication, useSubmitApplication, useUpdateApplication, useDeleteDocument } from '@/hooks/api/use-applications';
-import { Application } from '@/types';
+import { useCreateApplication, useSubmitApplication, useResubmitApplication, useUpdateApplication, useDeleteDocument } from '@/hooks/api/use-applications';
+import { Application, ApplicationStatus } from '@/types';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -86,6 +86,7 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
   const { mutateAsync: createDraft } = useCreateApplication();
   const { mutateAsync: updateApp } = useUpdateApplication();
   const { mutateAsync: submitApp } = useSubmitApplication();
+  const { mutateAsync: resubmitApp } = useResubmitApplication();
   const { mutateAsync: deleteDoc } = useDeleteDocument();
 
   const handleFormSubmit = async (data: FormValues, shouldSubmit = false) => {
@@ -113,8 +114,13 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
       }
 
       if (shouldSubmit) {
-        await submitApp(currentAppId!);
-        notify.success('Application submitted successfully!');
+        if (initialData?.status === ApplicationStatus.PENDING_INFO) {
+          await resubmitApp(currentAppId!);
+          notify.success('Application resubmitted successfully!');
+        } else {
+          await submitApp(currentAppId!);
+          notify.success('Application submitted successfully!');
+        }
         router.push('/applications');
       } else {
         notify.success('Application saved as draft');

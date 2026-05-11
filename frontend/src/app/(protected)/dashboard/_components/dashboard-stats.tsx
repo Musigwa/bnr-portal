@@ -5,7 +5,7 @@ interface DashboardStatsProps {
     total: number;
     pending: number;
     awaitingDecision: number;
-    decidedThisMonth: number;
+    decided: number;
   };
 }
 
@@ -43,10 +43,10 @@ export function DashboardStats({ counts }: DashboardStatsProps) {
 
       <Card className="border-border shadow-sm hover:shadow-md transition-all duration-200 group border-l-4 border-l-green-500">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Decided This Month</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Decided</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-foreground">{counts.decidedThisMonth}</div>
+          <div className="text-2xl font-bold text-foreground">{counts.decided}</div>
         </CardContent>
       </Card>
     </div>

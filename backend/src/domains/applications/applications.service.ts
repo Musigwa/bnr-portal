@@ -58,6 +58,8 @@ export class ApplicationsService {
       searchFields,
       status,
       institutionType,
+      startDate,
+      endDate,
     } = query;
 
     const skip = (Number(page) - 1) * Number(limit);
@@ -80,6 +82,20 @@ export class ApplicationsService {
     }
     if (institutionType) {
       (where.AND as Prisma.ApplicationWhereInput[]).push({ institutionType });
+    }
+    if (startDate || endDate) {
+      const dateFilter: Prisma.DateTimeFilter = {};
+      if (startDate) {
+        dateFilter.gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        dateFilter.lte = end;
+      }
+      (where.AND as Prisma.ApplicationWhereInput[]).push({
+        createdAt: dateFilter,
+      });
     }
 
     // Advanced Search
@@ -202,8 +218,15 @@ export class ApplicationsService {
 
     if (app.applicantId !== user.id)
       throw new ForbiddenException('Access denied');
-    if (app.status !== ApplicationStatus.DRAFT) {
-      throw new ForbiddenException('Only DRAFT applications can be edited');
+
+    const allowedStatuses: ApplicationStatus[] = [
+      ApplicationStatus.DRAFT,
+      ApplicationStatus.PENDING_INFO,
+    ];
+    if (!allowedStatuses.includes(app.status)) {
+      throw new ForbiddenException(
+        'Only DRAFT or PENDING_INFO applications can be edited',
+      );
     }
 
     return this.prisma.application.update({ where: { id }, data: dto });

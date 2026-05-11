@@ -97,7 +97,7 @@ export function ApplicationTable({
       className: 'text-muted-foreground',
       render: (app) => {
         const date = app.submittedAt || app.createdAt;
-        return date ? new Intl.DateTimeFormat('en-GB', { 
+        return date ? new Intl.DateTimeFormat('en-US', { 
           day: 'numeric', 
           month: 'short', 
           year: 'numeric' 

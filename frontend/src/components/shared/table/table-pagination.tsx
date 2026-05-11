@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,33 @@ export function DataTablePagination({
   onPageChange,
   onPageSizeChange,
 }: DataTablePaginationProps) {
+  const [prevCurrentPage, setPrevCurrentPage] = useState(currentPage);
+  const [inputValue, setInputValue] = useState(String(currentPage));
+
+  if (currentPage !== prevCurrentPage) {
+    setPrevCurrentPage(currentPage);
+    setInputValue(String(currentPage));
+  }
+
+  useEffect(() => {
+    const p = parseInt(inputValue);
+    if (isNaN(p)) return;
+
+    const clampedPage = Math.min(totalPages, Math.max(1, p));
+
+    if (clampedPage !== currentPage) {
+      const handler = setTimeout(() => {
+        onPageChange(clampedPage);
+      }, 500);
+      return () => clearTimeout(handler);
+    } else if (p !== currentPage) {
+      const handler = setTimeout(() => {
+        setInputValue(String(currentPage));
+      }, 500);
+      return () => clearTimeout(handler);
+    }
+  }, [inputValue, currentPage, totalPages, onPageChange]);
+
   return (
     <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4 bg-muted/10 border-t border-border shrink-0">
       <div className="text-sm text-muted-foreground">
@@ -53,16 +81,26 @@ export function DataTablePagination({
             type="number" 
             min={1} 
             max={totalPages}
-            defaultValue={currentPage}
-            key={currentPage}
-            onBlur={(e) => {
-              const p = parseInt(e.target.value);
-              if (!isNaN(p)) onPageChange(Math.min(totalPages, Math.max(1, p)));
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onBlur={() => {
+              const p = parseInt(inputValue);
+              if (!isNaN(p)) {
+                const clamped = Math.min(totalPages, Math.max(1, p));
+                onPageChange(clamped);
+                setInputValue(String(clamped));
+              } else {
+                setInputValue(String(currentPage));
+              }
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
-                const p = parseInt(e.currentTarget.value);
-                if (!isNaN(p)) onPageChange(Math.min(totalPages, Math.max(1, p)));
+                const p = parseInt(inputValue);
+                if (!isNaN(p)) {
+                  const clamped = Math.min(totalPages, Math.max(1, p));
+                  onPageChange(clamped);
+                  setInputValue(String(clamped));
+                }
               }
             }}
             className="w-14 !h-8 !py-0 text-center bg-card border-border focus-visible:ring-1 focus-visible:ring-primary/20 shadow-none"

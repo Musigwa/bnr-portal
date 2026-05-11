@@ -275,15 +275,15 @@ export default function ApplicationDetailsPage() {
         {/* Main Content */}
         <div className="md:col-span-5 space-y-6">
           {app.status === ApplicationStatus.PENDING_INFO && app.reviewerNotes && (
-            <Card className="border-amber-200 bg-amber-50/30 overflow-hidden shadow-sm">
-              <CardHeader className="bg-amber-100/50 border-b border-amber-200 flex flex-row items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-amber-600" />
-                <CardTitle className="text-xl text-amber-900">Reviewer Feedback</CardTitle>
+            <Card className="border-amber-200 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-950/20 overflow-hidden shadow-sm">
+              <CardHeader className="bg-amber-100/50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-900/30 flex flex-row items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <CardTitle className="text-xl text-amber-900 dark:text-amber-200">Reviewer Feedback</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-foreground/90 leading-relaxed font-medium whitespace-pre-wrap">{app.reviewerNotes}</p>
                 {app.status === ApplicationStatus.PENDING_INFO && (
-                  <p className="mt-4 text-sm text-amber-700 bg-amber-100/50 p-3 rounded-lg border border-amber-200/50">
+                  <p className="mt-4 text-sm text-amber-700 dark:text-amber-300 bg-amber-100/50 dark:bg-amber-950/50 p-3 rounded-lg border border-amber-200/50 dark:border-amber-900/30">
                     <strong>Action Required: </strong> Please update the application details or upload missing documents, then click &quot;Resubmit Application&quot; above.
                   </p>
                 )}

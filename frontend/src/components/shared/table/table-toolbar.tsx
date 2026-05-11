@@ -36,7 +36,7 @@ export function DataTableToolbar({
       if (inputValue !== searchQuery) {
         onSearchChange(inputValue);
       }
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [inputValue, onSearchChange, searchQuery]);
@@ -59,7 +59,7 @@ export function DataTableToolbar({
               value={selectedValue}
               onValueChange={(val) => onFilterChange(filter.key, val ?? 'all')}
             >
-              <SelectTrigger className="h-10 w-full sm:w-44 bg-card border-border text-foreground">
+              <SelectTrigger className="h-10 w-full sm:w-auto sm:min-w-44 bg-card border-border text-foreground">
                 <SelectValue>{displayLabel}</SelectValue>
               </SelectTrigger>
               <SelectContent>

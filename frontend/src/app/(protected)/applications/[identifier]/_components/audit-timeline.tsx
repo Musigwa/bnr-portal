@@ -51,7 +51,7 @@ export function AuditTimeline({ logs }: AuditTimelineProps) {
                 {formatAction(log.action)}
               </span>
               <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
-                {new Intl.DateTimeFormat('en-GB', { 
+                {new Intl.DateTimeFormat('en-US', { 
                   day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
                 }).format(new Date(log.createdAt))}
               </span>

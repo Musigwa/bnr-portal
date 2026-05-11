@@ -32,4 +32,12 @@ export class QueryApplicationsDto {
   @ApiProperty({ required: false })
   @IsOptional()
   institutionType?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  startDate?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  endDate?: string;
 }

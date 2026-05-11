@@ -3,7 +3,7 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { UserPlus, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { DataTable, ColumnDef, FilterDef, useDataTable } from '@/components/shared/table';
+import { DataTable, ColumnDef, FilterDef } from '@/components/shared/table';
 
 interface DashboardTableProps {
   applications: Application[];
@@ -11,6 +11,21 @@ interface DashboardTableProps {
   isLoading: boolean;
   onAssign?: (id: string) => void;
   onApprove?: (id: string) => void;
+  
+  // Pagination & Filtering Props
+  currentPage: number;
+  totalPages: number;
+  totalResults: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
+  
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  
+  activeFilters: Record<string, string>;
+  onFilterChange: (key: string, value: string) => void;
+  onClearFilters: () => void;
 }
 
 export function DashboardTable({ 
@@ -18,11 +33,22 @@ export function DashboardTable({
   userRole, 
   isLoading,
   onAssign,
-  onApprove 
+  onApprove,
+  currentPage,
+  totalPages,
+  totalResults,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  searchQuery,
+  onSearchChange,
+  activeFilters,
+  onFilterChange,
+  onClearFilters,
 }: DashboardTableProps) {
   const router = useRouter();
 
-    const navigateToApplication = (refNumber: string) => {
+  const navigateToApplication = (refNumber: string) => {
     router.push(`/applications/${refNumber}`);
   };
 
@@ -54,7 +80,7 @@ export function DashboardTable({
       className: 'text-muted-foreground',
       render: (app) => {
         const date = app.submittedAt || app.createdAt;
-        return date ? new Intl.DateTimeFormat('en-GB', { 
+        return date ? new Intl.DateTimeFormat('en-US', { 
           day: 'numeric', 
           month: 'short', 
           year: 'numeric' 
@@ -111,67 +137,49 @@ export function DashboardTable({
 
   const filters: FilterDef[] = [
     {
-      key: 'institutionType',
-      label: 'Type',
-      options: [
-        { label: 'Commercial Bank', value: 'COMMERCIAL_BANK' },
-        { label: 'Microfinance', value: 'MICROFINANCE' },
-        { label: 'Digital Bank', value: 'DIGITAL_BANK' },
-      ]
-    },
-    {
       key: 'status',
       label: 'Status',
       options: Object.values(ApplicationStatus).filter(s => s !== ApplicationStatus.DRAFT).map(s => ({
         label: s.replace('_', ' ').toLowerCase(),
         value: s
       }))
+    },
+    {
+      key: 'institutionType',
+      label: 'Institution Type',
+      options: [
+        { label: 'Commercial Bank', value: 'COMMERCIAL_BANK' },
+        { label: 'Microfinance', value: 'MICROFINANCE' },
+        { label: 'Digital Bank', value: 'DIGITAL_BANK' }
+      ]
     }
   ];
 
-  const {
-    searchQuery,
-    setSearchQuery,
-    activeFilters,
-    paginatedData,
-    totalFiltered,
-    totalPages,
-    currentPage,
-    setCurrentPage,
-    pageSize,
-    setPageSize,
-    handleFilterChange,
-    clearFilters
-  } = useDataTable(applications, {
-    searchKey: 'institutionName',
-    filters,
-    initialPageSize: 5
-  });
-
   return (
     <DataTable
-      data={paginatedData}
+      data={applications}
       columns={columns}
       onRowClick={(app) => navigateToApplication(app.refNumber)}
       isLoading={isLoading}
       
       // Toolbar props
       searchQuery={searchQuery}
-      onSearchChange={setSearchQuery}
+      onSearchChange={onSearchChange}
       searchKey="institutionName"
       searchPlaceholder="Search applications by name..."
       filters={filters}
       activeFilters={activeFilters}
-      onFilterChange={handleFilterChange}
-      onClear={clearFilters}
+      onFilterChange={onFilterChange}
+      onClear={onClearFilters}
       
       // Pagination props
       currentPage={currentPage}
       totalPages={totalPages}
-      totalResults={totalFiltered}
+      totalResults={totalResults}
       pageSize={pageSize}
-      onPageChange={setCurrentPage}
-      onPageSizeChange={setPageSize}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
     />
   );
 }
+

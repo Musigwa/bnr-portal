@@ -40,7 +40,7 @@ export function DocumentList({ documents, onDownload }: DocumentListProps) {
               <div className="p-5 bg-card rounded-2xl shadow-sm border border-border group-hover:border-primary/20 group-hover:shadow-md transition-all">
                 <FileIcon className="w-11 h-11 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              <div className="absolute -bottom-2 -right-2 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-sm transform rotate-3">
+              <div className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-sm transform rotate-3">
                 {doc.fileName.split('.').pop()?.toUpperCase()}
               </div>
             </div>
