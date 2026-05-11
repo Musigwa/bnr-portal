@@ -215,7 +215,7 @@ export class ApplicationsService {
     return this.prisma.$transaction(async (tx) => {
       // Lock the row
       const [app] = await tx.$queryRaw<Application[]>`
-        SELECT * FROM "Application" WHERE id = ${id}::uuid FOR UPDATE
+        SELECT * FROM "Application" WHERE id = ${id} FOR UPDATE
       `;
 
       if (!app) throw new NotFoundException('Application not found');
