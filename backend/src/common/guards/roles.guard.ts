@@ -25,7 +25,7 @@ export class RolesGuard implements CanActivate {
       user: { role: Role; email: string };
     }>();
     console.log(
-      `[RolesGuard] User: ${user?.email}, Role: ${user?.role}, Required: ${requiredRoles.join(',')}`,
+      `[RolesGuard] (User: ${user?.email}, Role: ${user?.role}) <-> (Required Roles: ${requiredRoles.join(', ')})`,
     );
     if (!requiredRoles.includes(user.role)) {
       throw new ForbiddenException('Insufficient permissions');

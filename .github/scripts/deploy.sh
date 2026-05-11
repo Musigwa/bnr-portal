@@ -99,64 +99,104 @@ for i in {1..30}; do
 done
 
 # 6. Update Caddy configuration
-# We assume Caddy looks at files in /opt/observability/caddy/sites/
 CADDY_SITES_PATH="/opt/observability/caddy/sites"
-SITE_FILE="${CADDY_SITES_PATH}/${SERVICE}.bnr-portal.caddy"
+UPSTREAM="$NEW_CONTAINER_NAME:$CONTAINER_PORT"
+IS_HOST_CADDY=false
 
 # Find Caddy container name
 CADDY_CONTAINER=$(docker ps --format '{{.Names}}' | grep "caddy" | head -n 1)
 
-if [ -z "$CADDY_CONTAINER" ]; then
-  echo "⚠️ Caddy container not found! Skipping Caddy reload."
-else
-  echo "📝 Updating Caddy config at $SITE_FILE..."
-  
-  # Create the caddy file with the new port
-  # Note: This is a simple reverse proxy config. Adjust domain as needed.
-  # Default to nip.io if not provided by environment
-  DOMAIN_ROOT=${DOMAIN_ROOT:-212.47.77.2.nip.io}
+# Detect if Caddy is running natively on the host
+if [ -z "$CADDY_CONTAINER" ] && systemctl is-active --quiet caddy; then
+  echo "ℹ️ Caddy is running natively on the host VPS. Using host Caddy routing..."
+  CADDY_SITES_PATH="/etc/caddy/sites"
+  UPSTREAM="127.0.0.1:$NEW_PORT"
+  IS_HOST_CADDY=true
+fi
 
-  # Construct the domain based on the app name and domain root
-  DOMAIN="${APP_NAME}.${DOMAIN_ROOT}"
-  if [ "$SERVICE" = "backend" ]; then
-    DOMAIN="api.${APP_NAME}.${DOMAIN_ROOT}"
-  fi
-  
-  # Write to a temp file first
-  cat <<EOF > /tmp/caddy_temp
+# Define site config file path
+SITE_FILE="${CADDY_SITES_PATH}/${SERVICE}.bnr-portal.caddy"
+
+# Default to nip.io if not provided by environment
+DOMAIN_ROOT=${DOMAIN_ROOT:-212.47.77.2.nip.io}
+DOMAIN="${APP_NAME}.${DOMAIN_ROOT}"
+if [ "$SERVICE" = "backend" ]; then
+  DOMAIN="api.${APP_NAME}.${DOMAIN_ROOT}"
+fi
+
+# Use internal self-signed TLS only for nip.io domains to avoid ACME rate limits
+if [[ "$DOMAIN" == *"nip.io"* ]]; then
+  TLS_LINE="    tls internal"
+else
+  TLS_LINE=""
+fi
+
+# Write to a temp file first
+cat <<EOF > /tmp/caddy_temp
 $DOMAIN {
-    reverse_proxy $NEW_CONTAINER_NAME:$CONTAINER_PORT
+$TLS_LINE
+    reverse_proxy $UPSTREAM
 }
 EOF
 
-  # Move to the shared volume path
-  # This assumes the script runs on the host and has access to $CADDY_SITES_PATH
-  if [ -w "$CADDY_SITES_PATH" ]; then
-    mv /tmp/caddy_temp "$SITE_FILE"
-    echo "🔄 Reloading Caddy..."
-    docker exec "$CADDY_CONTAINER" caddy reload --config /etc/caddy/Caddyfile
-    
-    echo "🔍 Verifying public routing through Caddy..."
-    PUBLIC_URL="https://${DOMAIN}/docs"
-    if [ "$SERVICE" = "frontend" ]; then
-      PUBLIC_URL="https://${DOMAIN}/"
-    fi
+# Reload Caddy config based on whether it is native or dockerized
+if [ "$IS_HOST_CADDY" = true ]; then
+  echo "🔑 Gaining temporary write access to $CADDY_SITES_PATH using passwordless sudo chown..."
+  sudo /bin/chown -R deploy:deploy "$CADDY_SITES_PATH"
+  mv /tmp/caddy_temp "$SITE_FILE"
+  echo "🔄 Reloading native host Caddy..."
+  caddy reload --config /etc/caddy/Caddyfile
+  
+  echo "🔍 Verifying public routing through native Caddy..."
+  PUBLIC_URL="https://${DOMAIN}/docs"
+  if [ "$SERVICE" = "frontend" ]; then
+    PUBLIC_URL="https://${DOMAIN}/"
+  fi
 
-    for i in {1..5}; do
-      status=$(curl -s -k -o /dev/null -L -w "%{http_code}" -m 10 "$PUBLIC_URL" || echo "000")
-      if [ "$status" = "200" ]; then
-        echo "✅ Public routing is working! (Status: $status)"
-        break
-      fi
-      echo "⏳ Waiting for Caddy to route traffic (Current Status: $status)..."
-      sleep 3
-      if [ $i -eq 5 ]; then
-        echo "❌ Public routing failed! Caddy might not be routing correctly."
-        exit 1
-      fi
-    done
+  for i in {1..5}; do
+    status=$(curl -s -k -o /dev/null -L -w "%{http_code}" -m 10 "$PUBLIC_URL" || echo "000")
+    if [ "$status" = "200" ]; then
+      echo "✅ Public routing is working! (Status: $status)"
+      break
+    fi
+    echo "⏳ Waiting for native Caddy to route traffic (Current Status: $status)..."
+    sleep 3
+    if [ $i -eq 5 ]; then
+      echo "❌ Public routing failed! Native Caddy might not be routing correctly."
+      exit 1
+    fi
+  done
+else
+  if [ -z "$CADDY_CONTAINER" ]; then
+    echo "⚠️ Caddy container not found! Skipping Caddy reload."
   else
-    echo "⚠️ Cannot write to $CADDY_SITES_PATH. Manual intervention may be required."
+    if [ -w "$CADDY_SITES_PATH" ]; then
+      mv /tmp/caddy_temp "$SITE_FILE"
+      echo "🔄 Reloading Caddy container..."
+      docker exec "$CADDY_CONTAINER" caddy reload --config /etc/caddy/Caddyfile
+      
+      echo "🔍 Verifying public routing through Caddy container..."
+      PUBLIC_URL="https://${DOMAIN}/docs"
+      if [ "$SERVICE" = "frontend" ]; then
+        PUBLIC_URL="https://${DOMAIN}/"
+      fi
+
+      for i in {1..5}; do
+        status=$(curl -s -k -o /dev/null -L -w "%{http_code}" -m 10 "$PUBLIC_URL" || echo "000")
+        if [ "$status" = "200" ]; then
+          echo "✅ Public routing is working! (Status: $status)"
+          break
+        fi
+        echo "⏳ Waiting for Caddy container to route traffic (Current Status: $status)..."
+        sleep 3
+        if [ $i -eq 5 ]; then
+          echo "❌ Public routing failed! Caddy container might not be routing correctly."
+          exit 1
+        fi
+      done
+    else
+      echo "⚠️ Cannot write to $CADDY_SITES_PATH. Manual intervention may be required."
+    fi
   fi
 fi
 

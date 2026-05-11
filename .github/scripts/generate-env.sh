@@ -61,6 +61,34 @@ if [ -n "${APP_NAME:-}" ]; then
   echo "APP_NAME=\"$APP_NAME_LOWER\"" >> "$TEMP_OUTPUT"
 fi
 
+# Set NODE_ENV explicitly from TARGET_ENV
+echo "NODE_ENV=\"${TARGET_ENV}\"" >> "$TEMP_OUTPUT"
+
+# Enforce that all required environment variables are defined
+log_info "Verifying required environment variables are configured..."
+REQUIRED_VARS=(
+  "BACKEND_PORT"
+  "NEXT_FRONTEND_PORT"
+  "JWT_SECRET"
+  "JWT_REFRESH_SECRET"
+  "NEXT_PUBLIC_API_URL"
+  "DB_USER"
+  "DB_PASSWORD"
+  "DB_NAME"
+)
+
+failed=0
+for var in "${REQUIRED_VARS[@]}"; do
+  if ! grep -q "^${var}=" "$TEMP_OUTPUT"; then
+    log_error "Required configuration variable '${var}' is missing! Please configure it in your environment/secrets."
+    failed=1
+  fi
+done
+
+if [ $failed -eq 1 ]; then
+  exit 2
+fi
+
 # Atomic move to final location
 mv "$TEMP_OUTPUT" "$OUTPUT_FILE"
 
