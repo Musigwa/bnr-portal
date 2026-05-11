@@ -38,7 +38,7 @@ services:
       - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
     ports:
       - "${MINIO_PORT}:9000"
-      - "9001:9001"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
@@ -116,7 +116,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - MINIO_ENDPOINT=minio
-      - MINIO_PORT=${MINIO_PORT:-9000}
+      - MINIO_PORT=9000
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-admin}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-admin123}
       - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-bnr-portal-documents}
