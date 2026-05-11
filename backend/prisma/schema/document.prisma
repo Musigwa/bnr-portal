@@ -1,0 +1,16 @@
+model Document {
+    id            String      @id @default(uuid())
+    applicationId String
+    application   Application @relation(fields: [applicationId], references: [id])
+
+    fileName     String
+    fileSize     Int
+    mimeType     String
+    storagePath  String
+    uploadedById String
+    version      Int     @default(1)
+    isSuperseded Boolean @default(false)
+    supersededBy String?
+
+    uploadedAt DateTime @default(now())
+}

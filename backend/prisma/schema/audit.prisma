@@ -1,0 +1,18 @@
+model AuditLog {
+    id            String      @id @default(uuid())
+    applicationId String
+    application   Application @relation(fields: [applicationId], references: [id])
+
+    actorId String
+    actor   User   @relation(fields: [actorId], references: [id])
+
+    action       String
+    statusBefore ApplicationStatus?
+    statusAfter  ApplicationStatus?
+    metadata     Json?
+
+    createdAt DateTime @default(now())
+
+    @@index([applicationId])
+    @@index([actorId])
+}

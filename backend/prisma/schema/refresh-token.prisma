@@ -1,0 +1,10 @@
+model RefreshToken {
+    id        String    @id @default(uuid())
+    userId    String
+    user      User      @relation(fields: [userId], references: [id])
+    tokenHash String    @unique
+    lookupKey String    @unique // first 8 chars of raw token, stored plaintext for lookup
+    expiresAt DateTime
+    createdAt DateTime  @default(now())
+    revokedAt DateTime?
+}

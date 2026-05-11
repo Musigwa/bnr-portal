@@ -1,0 +1,20 @@
+enum Role {
+    APPLICANT
+    REVIEWER
+    APPROVER
+    ADMIN
+}
+
+model User {
+    id           String   @id @default(uuid())
+    email        String   @unique
+    passwordHash String
+    fullName     String
+    role         Role
+    createdAt    DateTime @default(now())
+
+    applications  Application[]  @relation("ApplicantApplications")
+    reviewedApps  Application[]  @relation("ReviewerApplications")
+    auditLogs     AuditLog[]
+    refreshTokens RefreshToken[]
+}
