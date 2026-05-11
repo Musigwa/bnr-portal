@@ -1,11 +1,11 @@
 'use client';
 
-import { Application, ApplicationStatus, Role } from '@/types';
 import { StatusBadge } from '@/components/shared/status-badge';
+import { ColumnDef, DataTable, FilterDef } from '@/components/shared/table';
 import { Button } from '@/components/ui/button';
-import { Eye, UserPlus, CheckCircle2 } from 'lucide-react';
+import { Application, ApplicationStatus, Role } from '@/types';
+import { CheckCircle2, Eye, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { DataTable, ColumnDef, FilterDef } from '@/components/shared/table';
 
 interface ApplicationTableProps {
   applications: Application[];
@@ -29,6 +29,10 @@ interface ApplicationTableProps {
   activeFilters: Record<string, string>;
   onFilterChange: (key: string, value: string) => void;
   onClearFilters: () => void;
+
+  // New styling/layout props
+  className?: string;
+  maxHeight?: string;
 }
 
 export function ApplicationTable({ 
@@ -48,7 +52,7 @@ export function ApplicationTable({
   activeFilters,
   onFilterChange,
   onClearFilters,
-  isLoading
+  isLoading,
 }: ApplicationTableProps) {
   const router = useRouter();
   const isStaff = role !== Role.APPLICANT;

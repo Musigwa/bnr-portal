@@ -20,7 +20,7 @@ export function DataTablePagination({
   onPageSizeChange,
 }: DataTablePaginationProps) {
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4 bg-muted/10 border-t border-border">
+    <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4 bg-muted/10 border-t border-border shrink-0">
       <div className="text-sm text-muted-foreground">
         Showing <span className="font-medium text-foreground">{(currentPage - 1) * pageSize + 1}</span> to <span className="font-medium text-foreground">{Math.min(currentPage * pageSize, totalResults)}</span> of <span className="font-medium text-foreground">{totalResults}</span> results
       </div>

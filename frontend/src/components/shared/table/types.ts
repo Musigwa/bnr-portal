@@ -47,6 +47,7 @@ export interface DataTableProps<T> extends Partial<DataTableToolbarProps> {
   isLoading?: boolean;
   emptyMessage?: string;
   className?: string;
+  maxHeight?: string;
   // Pagination props are now part of the main props
   currentPage: number;
   totalPages: number;

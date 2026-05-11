@@ -61,20 +61,19 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-      
-      <DashboardStats counts={counts} />
-
-      <div className="pt-4">
-        <DashboardTable 
-          applications={applications?.data || []}
-          userRole={user?.role || Role.APPLICANT}
-          isLoading={isLoading}
-          onAssign={handleAssign}
-          onApprove={handleApprove}
-        />
+    <div className="flex flex-col space-y-6 md:h-[calc(100vh-180px)] md:overflow-hidden min-h-0">
+      <div className="shrink-0">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-6">Dashboard</h1>
+        <DashboardStats counts={counts} />
       </div>
+      
+      <DashboardTable 
+        applications={applications?.data || []}
+        userRole={user?.role || Role.APPLICANT}
+        isLoading={isLoading}
+        onAssign={handleAssign}
+        onApprove={handleApprove}
+      />
     </div>
   );
 }

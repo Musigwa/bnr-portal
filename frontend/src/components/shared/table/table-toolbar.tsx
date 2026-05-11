@@ -44,7 +44,7 @@ export function DataTableToolbar({
   const hasActiveFilters = searchQuery || Object.values(activeFilters).some(v => v && v !== 'all');
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 shrink-0">
       <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
         {filters.map((filter) => {
           const selectedValue = activeFilters[filter.key] || 'all';

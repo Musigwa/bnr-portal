@@ -58,8 +58,8 @@ export default function ApplicationsPage() {
   const meta = response?.meta || { total: 0, page: 1, limit: 10, totalPages: 0 };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="flex flex-col space-y-6 md:h-[calc(100vh-180px)] md:overflow-hidden min-h-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">My Applications</h1>
           <p className="text-muted-foreground mt-1 text-lg">
@@ -72,6 +72,8 @@ export default function ApplicationsPage() {
       </div>
       
       <ApplicationTable 
+        className="flex-1 flex flex-col overflow-hidden min-h-0"
+        maxHeight="flex-1"
         applications={applications}
         role={user?.role || Role.APPLICANT}
         isLoading={isFetching}
