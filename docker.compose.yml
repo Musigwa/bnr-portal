@@ -1,44 +1,111 @@
 version: '3.9'
 
 services:
+  # ==========================================
+  # DATABASE
+  # ==========================================
   postgres:
     image: postgres:16-alpine
+    profiles: ['development', 'production']
+    env_file:
+      - .env.${NODE_ENV}
     environment:
-      POSTGRES_USER: bnr
-      POSTGRES_PASSWORD: bnr_secret
-      POSTGRES_DB: bnr_portal
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     ports:
-      - "5432:5432"
+    # The right side (:5432) is the port inside the container and is FIXED because Postgres always listens on 5432.
+    # The left side (${DB_PORT}) is the port on your host (Mac/PC/VPS) and you can set it in .env file.
+      - "${DB_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - bnr_network
 
-  backend:
+  # ==========================================
+  # BACKEND - DEVELOPMENT
+  # ==========================================
+  backend-dev:
+    profiles: ['development']
     build:
       context: ./backend
       dockerfile: Dockerfile
+    env_file:
+      - .env.development
     ports:
-      - "3001:3001"
+    # For apps (frontend and backend) in dev, we use the same port on both sides because we can tell the app inside to listen on it!
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
     environment:
-      DATABASE_URL: postgresql://bnr:bnr_secret@postgres:5432/bnr_portal
-      JWT_SECRET: super_secret_jwt_key_change_in_prod
-      JWT_REFRESH_SECRET: super_secret_refresh_key_change_in_prod
-      PORT: 3001
-      NODE_ENV: production
+      - CONTAINER_ENV=true
+      - NODE_ENV=development
+      # We hardcode 5432 here because that is the port used INSIDE the Docker network to talk to Postgres.
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - PORT=${BACKEND_PORT}
     depends_on:
       - postgres
     networks:
       - bnr_network
 
-  frontend:
+  # ==========================================
+  # BACKEND - PRODUCTION
+  # ==========================================
+  backend:
+    profiles: ['production']
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/${APP_NAME}-backend:${IMAGE_TAG}
+    env_file:
+      - .env.${NODE_ENV}
+    ports:
+    # Production apps use dynamic host ports (0) to avoid conflicts and enable Zero Downtime (Blue/Green friendly)!
+      - "0:3001"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - PORT=3001
+    depends_on:
+      - postgres
+    networks:
+      - bnr_network
+
+  # ==========================================
+  # FRONTEND - DEVELOPMENT
+  # ==========================================
+  frontend-dev:
+    profiles: ['development']
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    env_file:
+      - .env.development
     ports:
-      - "3000:3000"
+    # Dev apps use the same port on both sides because we can tell the app inside to listen on it!
+      - "${NEXT_FRONTEND_PORT}:${NEXT_FRONTEND_PORT}"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001
+      - NODE_ENV=development
+    # Your browser accesses the backend from the host (Mac), so we use localhost:${BACKEND_PORT}.
+      - NEXT_PUBLIC_API_URL=http://localhost:${BACKEND_PORT}
+    depends_on:
+      - backend-dev
+    networks:
+      - bnr_network
+
+  # ==========================================
+  # FRONTEND - PRODUCTION
+  # ==========================================
+  frontend:
+    profiles: ['production']
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/${APP_NAME}-frontend:${IMAGE_TAG}
+    env_file:
+      - .env.${NODE_ENV}
+    ports:
+    # Production apps use dynamic host ports (0) to avoid conflicts and enable Zero Downtime (Blue/Green friendly)!
+      - "0:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     depends_on:
       - backend
     networks:
