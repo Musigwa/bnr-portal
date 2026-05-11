@@ -15,6 +15,13 @@ const configuration = () => ({
     jwtSecret: process.env.JWT_SECRET,
     jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
   },
+  storage: {
+    endpoint: process.env.MINIO_ENDPOINT,
+    port: parseInt(process.env.MINIO_PORT!, 10),
+    accessKey: process.env.MINIO_ACCESS_KEY,
+    secretKey: process.env.MINIO_SECRET_KEY,
+    bucketName: process.env.MINIO_BUCKET_NAME,
+  },
 });
 
 export type Config = ReturnType<typeof configuration>;

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ApplicationsService } from './applications.service';
 import { ApplicationsController } from './applications.controller';
-import { AuditModule } from '../audit/audit.module';
+import { AuditModule } from '@/domains/audit/audit.module';
 
 @Module({
   imports: [AuditModule],

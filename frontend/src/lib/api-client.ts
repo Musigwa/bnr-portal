@@ -156,7 +156,14 @@ export const apiClient = {
     if (token) headers['Authorization'] = `Bearer ${token}`;
     
     const res = await fetch(`${API_URL}${endpoint}`, { headers });
-    if (!res.ok) throw new Error('Failed to download file');
+    if (!res.ok) {
+      const isJson = res.headers.get('content-type')?.includes('application/json');
+      if (isJson) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to download file');
+      }
+      throw new Error('Failed to download file');
+    }
 
     if (onProgress && res.body) {
       const contentLength = res.headers.get('content-length');

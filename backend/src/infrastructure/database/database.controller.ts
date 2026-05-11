@@ -1,9 +1,9 @@
 import { Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
 import { SeedService } from './seed/seed.service';
-import { Roles } from '../common/decorators/roles.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { Public } from '../common/decorators/public.decorator';
+import { Public } from '@/common/decorators/public.decorator';
 
 @ApiTags('Database')
 @ApiBearerAuth('access-token')

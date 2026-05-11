@@ -1,4 +1,4 @@
-import { PrismaService } from '@/database/prisma.service';
+import { PrismaService } from '@/infrastructure/database/prisma.service';
 import {
   Injectable,
   NotFoundException,

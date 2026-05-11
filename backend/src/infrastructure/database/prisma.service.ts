@@ -1,8 +1,14 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { generateDatabaseUrl } from '../utils/db-url.generator';
+
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool, PoolConfig } from 'pg';
+import { generateDatabaseUrl } from '@/utils/db-url.generator';
 
 @Injectable()
 export class PrismaService
@@ -35,11 +41,11 @@ export class PrismaService
     // Facilitate the ref number generation
     await this
       .$queryRaw`CREATE SEQUENCE IF NOT EXISTS application_ref_seq START 1`;
-    console.log('✅ Database connected successfully');
+    Logger.log('Database connected successfully', 'PrismaService');
   }
 
   async onModuleDestroy() {
-    console.log('❌ Database disconnected');
+    Logger.log('Database disconnected', 'PrismaService');
     if (this.pool) await this.pool.end();
     await this.$disconnect();
   }

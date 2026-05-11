@@ -3,27 +3,22 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
+import { PrismaService } from '@/infrastructure/database/prisma.service';
+import { StorageService } from '@/infrastructure/storage/storage.service';
 import { ApplicationStatus, Role, User, Document } from '@prisma/client';
-import * as fs from 'fs';
-import * as path from 'path';
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
 @Injectable()
 export class DocumentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storage: StorageService,
+  ) {}
 
   async upload(applicationId: string, user: User, file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      if (file.path) fs.unlinkSync(file.path);
-      throw new BadRequestException('File exceeds maximum size of 5MB');
     }
 
     const app = await this.prisma.application.findFirst({
@@ -67,6 +62,13 @@ export class DocumentsService {
     }
 
     const nextVersion = existing ? existing.version + 1 : 1;
+    const uniqueId = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+
+    // Structured MinIO Object Key: [applicationId]/[uniqueId]-[originalname]
+    const objectKey = `${app.id}/${uniqueId}-${file.originalname}`;
+
+    // Upload buffer to S3
+    await this.storage.uploadFile(objectKey, file.buffer, file.mimetype);
 
     const document = await this.prisma.document.create({
       data: {
@@ -74,7 +76,7 @@ export class DocumentsService {
         fileName: file.originalname,
         fileSize: file.size,
         mimeType: file.mimetype,
-        storagePath: file.path,
+        storagePath: objectKey, // Storing the S3 Object Key
         uploadedById: user.id,
         version: nextVersion,
         isSuperseded: false,
@@ -134,9 +136,6 @@ export class DocumentsService {
     });
 
     if (!doc) throw new NotFoundException('Document not found');
-    if (!fs.existsSync(doc.storagePath)) {
-      throw new NotFoundException('File not found on disk');
-    }
 
     return doc;
   }
@@ -203,23 +202,17 @@ export class DocumentsService {
       where: { id: documentId },
     });
 
-    // 2. Delete from physical storage
-    if (fs.existsSync(doc.storagePath)) {
-      try {
-        fs.unlinkSync(doc.storagePath);
-      } catch (err) {
-        // Log error but don't fail if file is already gone
-        console.error(`Failed to delete file at ${doc.storagePath}:`, err);
-      }
+    // 2. Delete from object storage
+    try {
+      await this.storage.deleteFile(doc.storagePath);
+    } catch (err) {
+      Logger.error(
+        `Failed to delete S3 object at ${doc.storagePath}:`,
+        err instanceof Error ? err.stack : String(err),
+        'DocumentsService',
+      );
     }
 
     return { success: true };
-  }
-
-  ensureUploadDir() {
-    if (!fs.existsSync(UPLOAD_DIR)) {
-      fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-    }
-    return UPLOAD_DIR;
   }
 }

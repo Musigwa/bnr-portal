@@ -5,13 +5,13 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { JwtAuthGuard } from './common/guards/jwt.auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
-import { PrismaModule } from './database/prisma.module';
 import { ApplicationsModule } from './domains/applications/applications.module';
 import { AuditModule } from './domains/audit/audit.module';
 import { AuthModule } from './domains/auth/auth.module';
 import { DocumentsModule } from './domains/documents/documents.module';
 import { UsersModule } from './domains/users/users.module';
 import { AppController } from './app.controller';
+import { PrismaModule } from './infrastructure/database/prisma.module';
 
 @Module({
   imports: [

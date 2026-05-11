@@ -14,7 +14,7 @@ We establish the following naming standards for environment variables in the pro
 - **Secure Variables**: Must be prefixed with `NEXT_*` (e.g., `NEXT_SECRET_KEY`). These remain private to the Next.js server-side and are never exposed to the browser.
 
 ### 2. Backend (NestJS)
-- **All Variables**: Will have no prefix (e.g., `DB_PASSWORD`, `JWT_SECRET`). They are private to the backend container.
+- **All Variables**: Will have no prefix (e.g., `DB_PASSWORD`, `JWT_SECRET`, `MINIO_ACCESS_KEY`). They are private to the backend container.
 
 ### 3. Storage in Vault
 - All secrets live in the same `production` environment on GitHub.

@@ -1,7 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFormContext } from 'react-hook-form';
-import { FormValues } from '../schema';
+import { FormValues } from '@/app/(protected)/applications/new/_components/schema';
 
 export function FinancialFields() {
   const { register, formState: { errors } } = useFormContext<FormValues>();

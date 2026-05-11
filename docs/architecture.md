@@ -85,7 +85,7 @@ The four-eyes principle: the person who forms an opinion on an application (revi
 
 **Choice: JWT with short-lived access tokens (15min) + refresh tokens (7 days)**
 
-Justification: Stateless access tokens scale horizontally without shared session storage. Short expiry limits blast radius of token theft. Refresh tokens are stored as bcrypt hashes with a plaintext lookup key — O(1) lookup without storing raw tokens.
+**Justification**: Stateless access tokens scale horizontally without shared session storage. Short expiry limits blast radius of token theft. Refresh tokens are stored as bcrypt hashes with a plaintext lookup key — O(1) lookup without storing raw tokens.
 
 Session-based auth was rejected: requires sticky sessions or shared Redis, adds operational complexity for no benefit at this scale.
 
@@ -100,7 +100,7 @@ Two independent layers:
 1. **API layer**: No UPDATE or DELETE routes exist for AuditLog. `AuditService` exposes only `log()` and `getByApplication()`.
 2. **Database layer**: `REVOKE DELETE, UPDATE, TRUNCATE ON "AuditLog" FROM bnr` — the application database user physically cannot modify audit records even if the API is bypassed.
 
-Acknowledged limitation: a PostgreSQL superuser could still modify records. In a production system this would be addressed with a write-once ledger service or an append-only external log (e.g. CloudTrail, immutable S3).
+**Acknowledged limitation:** A PostgreSQL superuser could still modify records. In a production system this would be addressed with a write-once ledger service or an append-only external log (e.g. CloudTrail, immutable S3).
 
 ### Illegal state transitions
 
@@ -120,12 +120,12 @@ The following architectural and UX enhancements have been successfully implement
 
 - **Multi-Stage Docker Builds**: Dockerfiles have been optimized to separate build dependencies from runtime, utilizing Alpine base images and `pnpm` caching, which drastically reduces image sizes and build times.
 - **Next.js Standalone Output**: `next.config.ts` is configured with `output: 'standalone'` to produce a minimal production bundle without needing the full `node_modules` directory in the final container image.
-- **Advanced Frontend Analytics & UX**: The dashboard features complex data aggregation, dynamic custom date-range global filtering, and unified UI styling. 
+- **Advanced Frontend Analytics & UX**: The dashboard features complex data aggregation, dynamic custom date-range global filtering, and unified UI styling.
+- **Object Storage Migration**: Transitioned from local filesystem storage to MinIO (S3-compatible API), enabling robust, scalable document management using `StreamingService` for zero-memory footprint uploads.
 - **Inline Document Previews**: Leveraged native browser capabilities to render Blob Object URLs directly in new tabs, avoiding heavy external PDF/Image viewer libraries while keeping interactions entirely within the browser context.
 
 ### 6.2 Future Roadmap (Security & Compliance)
 
-- **Object Storage**: Migrate from local filesystem storage to AWS S3 or MinIO, utilizing pre-signed URLs for secure document uploads and downloads.
 - **Field-Level Encryption**: Implement encryption at rest for sensitive financial data (e.g., proposed capital, registration numbers) using Prisma middleware or native database encryption.
 - **Token Blacklisting**: Use Redis to store revoked tokens for immediate access token invalidation on logout.
 - **Granular Permissions (ABAC)**: Transition from simple Role-Based Access Control (RBAC) to Attribute-Based Access Control (ABAC) to allow policies like "Reviewer can only see applications in their assigned region".
@@ -133,9 +133,16 @@ The following architectural and UX enhancements have been successfully implement
 ### 6.3 Future Roadmap (Performance & Scalability)
 
 - **Pagination**: Implement cursor-based pagination on all list endpoints (Applications, Audit Logs) to prevent performance degradation as data grows.
-- **Asynchronous Processing**: Offload non-blocking tasks like email notifications to a message queue (e.g., BullMQ with Redis).
+- **Asynchronous Processing**: Offload non-blocking tasks (if introduced, a good example would be a mailing service, or the file upload/downlaod for large file streams) to a message queue (e.g., BullMQ with Redis).
 
 ### 6.4 Future Roadmap (Observability & Testing)
 
 - **Integration Testing**: Implement a dedicated test database (or use Testcontainers) to run end-to-end integration tests in CI.
 - **OpenTelemetry**: Integrate tracing and metrics to monitor system health and API latency in production.
+
+### 6.5 Future Roadmap (Data Integrity & Migrations)
+
+- **Expand-Contract Pattern (Parallel Change)**: To maintain our strict "Additive Migrations Only" policy while allowing necessary database schema evolution without downtime, future complex schema changes will strictly follow the three-phase **Expand-Contract** methodology:
+  1. **Expand**: Introduce the new database column/table alongside the old one. Update the application to write to both the old and new structures (dual-writes) while continuing to read from the old.
+  2. **Backfill**: Run a background migration script to securely copy and transform historical data from the old structure into the new structure. Switch application reads to the new structure once data is verified.
+  3. **Contract**: Remove the dual-write logic from the application. Once deployed and stable, create a final migration to safely drop the deprecated column/table.

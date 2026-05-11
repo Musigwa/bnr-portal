@@ -4,9 +4,10 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { logForensic } from '../utils/forensic-logger';
+import { logForensic } from '@/common/utils/forensic-logger';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -26,7 +27,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         : 'Internal server error';
 
     if (status === 500) {
-      console.error('Unhandled Exception:', exception);
+      Logger.error(
+        'Unhandled Exception:',
+        exception instanceof Error ? exception.stack : String(exception),
+        'GlobalExceptionFilter',
+      );
       logForensic('Unhandled Exception caught by GlobalFilter', exception);
     }
 

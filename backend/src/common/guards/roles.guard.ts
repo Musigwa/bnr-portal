@@ -3,6 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Role } from '@prisma/client';
@@ -24,8 +25,9 @@ export class RolesGuard implements CanActivate {
     const { user } = context.switchToHttp().getRequest<{
       user: { role: Role; email: string };
     }>();
-    console.log(
-      `[RolesGuard] (User: ${user?.email}, Role: ${user?.role}) <-> (Required Roles: ${requiredRoles.join(', ')})`,
+    Logger.debug(
+      `(User: ${user?.email}, Role: ${user?.role}) <-> (Required Roles: ${requiredRoles.join(', ')})`,
+      'RolesGuard',
     );
     if (!requiredRoles.includes(user.role)) {
       throw new ForbiddenException('Insufficient permissions');

@@ -1,9 +1,8 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
-import { DocumentsService } from './domains/documents/documents.service';
 import helmet from 'helmet';
 import { AppConfigService } from './config/config.service';
 
@@ -63,13 +62,18 @@ async function bootstrap() {
     customSiteTitle: 'BNR Bank Licensing & Compliance Portal',
   });
 
-  app.get(DocumentsService).ensureUploadDir();
-
   await app.listen(appPort);
-  console.log(`🚀 API running at http://localhost:${appPort}`);
-  console.log(`📖 Swagger docs at http://localhost:${appPort}/docs`);
+  Logger.log(`🚀 API running at http://localhost:${appPort}`, 'Bootstrap');
+  Logger.log(
+    `📖 Swagger docs at http://localhost:${appPort}/docs`,
+    'Bootstrap',
+  );
 }
 bootstrap().catch((error) => {
-  console.error('Application bootstrap failed:', error);
+  Logger.error(
+    'Application bootstrap failed:',
+    error instanceof Error ? error.stack : String(error),
+    'Bootstrap',
+  );
   process.exit(1);
 });

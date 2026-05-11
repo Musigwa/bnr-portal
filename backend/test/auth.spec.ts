@@ -2,7 +2,7 @@ import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Role } from '@prisma/client';
-import { RolesGuard } from '../src/common/guards/roles.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
 
 const mockUser = (role: Role) => ({ id: 'user-id', role });
 

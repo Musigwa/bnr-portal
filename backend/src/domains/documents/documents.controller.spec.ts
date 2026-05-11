@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DocumentsController } from './documents.controller';
 import { DocumentsService } from './documents.service';
+import { StorageService } from '@/infrastructure/storage/storage.service';
 
 describe('DocumentsController', () => {
   let controller: DocumentsController;
@@ -11,6 +12,10 @@ describe('DocumentsController', () => {
       providers: [
         {
           provide: DocumentsService,
+          useValue: {},
+        },
+        {
+          provide: StorageService,
           useValue: {},
         },
       ],

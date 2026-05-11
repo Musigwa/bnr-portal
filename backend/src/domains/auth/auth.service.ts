@@ -3,9 +3,9 @@ import { JwtService } from '@nestjs/jwt';
 
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
-import { PrismaService } from '@/database/prisma.service';
-import { UsersService } from '../users/users.service';
+import { randomUUID } from 'crypto';
+import { PrismaService } from '@/infrastructure/database/prisma.service';
+import { UsersService } from '@/domains/users/users.service';
 
 @Injectable()
 export class AuthService {
@@ -42,7 +42,7 @@ export class AuthService {
       expiresIn: '15m',
     });
 
-    const rawRefreshToken = uuidv4();
+    const rawRefreshToken = randomUUID();
     const lookupKey = rawRefreshToken.substring(0, 8);
     const tokenHash = await bcrypt.hash(rawRefreshToken, 10);
 

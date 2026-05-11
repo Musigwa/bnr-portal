@@ -19,10 +19,10 @@ We establish the following standards for Docker Compose and environment variable
 - **Port Mapping**: Use the same port for both host and container: `"${PORT}:${PORT}"` (e.g., `3001:3001`).
 - **Why**: This works because we pass the variable to the app inside the container, allowing both sides to move together if the port is changed.
 
-#### 1.2 App Dependency Services (Postgres)
+#### 1.2 App Dependency Services (Postgres, MinIO)
 
-- **Port Mapping**: Use variable host ports and fixed container ports: `"${DB_PORT}:5432"`.
-- **Why**: The right side is locked to `5432` because official database images have fixed listening ports. In development, `DB_PORT` can be set to `5432` or any other port to avoid conflicts on your host machine, while the right side remains fixed to `5432`.
+- **Port Mapping**: Use variable host ports and fixed container ports: `"${DB_PORT}:5432"` or `"${MINIO_PORT}:9000"`.
+- **Why**: The right side is locked to the official default ports (`5432` for Postgres, `9000` for MinIO) because official images have fixed listening ports. In development, the host ports can be set to any available port via `.env` to avoid conflicts on your host machine.
 
 ### 2. Production Environment
 
@@ -31,10 +31,10 @@ We establish the following standards for Docker Compose and environment variable
 - **Port Mapping**: Use dynamic host ports and fixed container ports: `"0:3001"`.
 - **Why**: Docker automatically assigns a random available port on the VPS, avoiding conflicts. This is also **Zero Downtime friendly** (especially in a Blue/Green strategy), as it allows starting a new container on a new random port before stopping the old one. A proxy service like **(Caddy)** can handle routing using service discovery strategy.
 
-#### 2.2 App Dependency Services (Postgres)
+#### 2.2 App Dependency Services (Postgres, MinIO)
 
 - **Port Mapping**: Use variable host ports and fixed container ports: `"${DB_PORT}:5432"`.
-- **Why**: In production, `DB_PORT` is set to `0` for dynamic mapping, letting Docker assign a random port while keeping the internal port at `5432`.
+- **Why**: In production, the host port is set to `0` for dynamic mapping, letting Docker assign a random port while keeping the internal port at `5432` (or `9000` for MinIO).
 
 ### 3. General Standards
 

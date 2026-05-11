@@ -9,10 +9,10 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { useCreateApplication, useSubmitApplication, useResubmitApplication, useUpdateApplication, useDeleteDocument } from '@/hooks/api/use-applications';
 import { Application, ApplicationStatus } from '@/types';
 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -151,19 +151,7 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
           </CardHeader>
           <CardContent className="pt-6 space-y-6">
             
-            {Object.keys(errors).length > 0 && (
-              <Alert variant="destructive" className="bg-destructive/10 border-destructive/20">
-                <AlertCircle className="h-4 w-4 text-destructive" />
-                <AlertTitle className="text-destructive font-bold">Form Validation Error</AlertTitle>
-                <AlertDescription className="text-destructive/90 mt-1">
-                  <ul className="list-disc list-inside space-y-1">
-                    {Object.entries(errors).map(([key, error]) => (
-                      <li key={key}>{error?.message as string}</li>
-                    ))}
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            )}
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <InstitutionFields />

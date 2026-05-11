@@ -2,7 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { FormValues } from '../schema';
+import { FormValues } from '@/app/(protected)/applications/new/_components/schema';
 
 const institutionTypeLabels: Record<string, string> = {
   'COMMERCIAL_BANK': 'Commercial Bank',

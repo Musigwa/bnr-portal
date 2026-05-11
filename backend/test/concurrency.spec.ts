@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ApplicationsService } from '../src/domains/applications/applications.service';
-import { PrismaService } from '../src/database/prisma.service';
-import { AuditService } from '../src/domains/audit/audit.service';
+import { ApplicationsService } from '@/domains/applications/applications.service';
+import { PrismaService } from '@/infrastructure/database/prisma.service';
+import { AuditService } from '@/domains/audit/audit.service';
 import { Application, ApplicationStatus, Role, User } from '@prisma/client';
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, Logger } from '@nestjs/common';
 
 const mockApprover = (id: string) => ({
   id,
@@ -18,7 +18,7 @@ describe('Concurrency — simultaneous approval', () => {
   let service: ApplicationsService;
   let _prisma: PrismaService;
 
-  const applicationId = 'test-app-id';
+  const applicationId = '123e4567-e89b-12d3-a456-426614174000';
   const reviewerId = 'reviewer-id';
 
   // Track how many times the transaction was called
@@ -27,6 +27,7 @@ describe('Concurrency — simultaneous approval', () => {
   let conflictCount = 0;
 
   beforeEach(async () => {
+    jest.spyOn(Logger, 'error').mockImplementation(() => {});
     transactionCallCount = 0;
     successCount = 0;
     conflictCount = 0;
@@ -87,6 +88,10 @@ describe('Concurrency — simultaneous approval', () => {
 
     service = module.get(ApplicationsService);
     _prisma = module.get(PrismaService);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('exactly one approval succeeds and one fails with ConflictException', async () => {

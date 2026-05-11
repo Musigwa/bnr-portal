@@ -113,15 +113,15 @@ execute_rollbacks() {
         return
     fi
     
-    log_warn "🔄 Executing Rollback Stack (Total: ${#ROLLBACK_STACK[@]} commands)..."
+    log_warn "Executing Rollback Stack (Total: ${#ROLLBACK_STACK[@]} commands)..."
     for cmd in "${ROLLBACK_STACK[@]}"; do
-        log_warn "   ⏪ Undoing: $cmd"
+        log_warn "   Undoing: $cmd"
         if ! eval "$cmd"; then
-            log_error "      ⚠️  Rollback command failed: $cmd"
+            log_error "      Rollback command failed: $cmd"
         fi
     done
     ROLLBACK_STACK=()
-    log_info "✅ Rollback completed."
+    log_info "Rollback completed."
 }
 
 # Global failure handler to be used with trap

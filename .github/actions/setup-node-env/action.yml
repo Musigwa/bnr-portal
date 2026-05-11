@@ -1,0 +1,47 @@
+name: "Setup Node Environment"
+description: "Checks out the repo, sets up Node, pnpm, caches, and installs dependencies"
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Install Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: 22
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v6
+
+    - name: Get pnpm store directory
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+      id: pnpm-cache
+
+    - name: Setup pnpm cache
+      uses: actions/cache@v5
+      with:
+        path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    - name: Cache TypeScript Build Info
+      uses: actions/cache@v5
+      with:
+        path: |
+          backend/tsconfig.tsbuildinfo
+          frontend/tsconfig.tsbuildinfo
+        key: ${{ runner.os }}-tsconfig-cache-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-tsconfig-cache-
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Generate Prisma client
+      shell: bash
+      run: pnpm -r postinstall

@@ -1,0 +1,47 @@
+# Version Control & CI/CD (Keep out of Docker context for security and speed)
+.git
+**/.git
+.github
+**/.github
+.husky
+**/.husky
+
+# Dependencies (Docker must install its own OS-specific dependencies)
+node_modules
+**/node_modules
+
+# Build Outputs & Caches (Docker must build fresh)
+.next
+**/.next
+dist
+**/dist
+.turbo
+**/.turbo
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+# Documentation & Misc (Not needed at runtime, wastes image size)
+docs/
+**/docs/
+README.md
+LICENSE
+docker.compose.yml
+
+# Testing & Logs
+coverage
+**/coverage
+*.log
+**/*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment & Local Data (CRITICAL: Prevents secrets from leaking into image layers)
+.env*
+!.env.example
+uploads/
+**/uploads/
+.DS_Store
+**/.DS_Store
+*.pem

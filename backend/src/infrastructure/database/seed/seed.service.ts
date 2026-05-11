@@ -1,8 +1,8 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { ApplicationStatus, Prisma, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../prisma.service';
 import { SEED_APPLICATIONS, SEED_USERS } from './seed.data';
+import { PrismaService } from '@/infrastructure/database/prisma.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -78,7 +78,12 @@ export class SeedService implements OnApplicationBootstrap {
       });
     }
 
-    this.logger.log('✅ Seed complete');
+    // manual seq bump since we bypass the prisma extension (needed to keep ref numbers predictable for tests)
+    await this.prisma.$executeRawUnsafe(
+      `SELECT setval('application_ref_seq', COALESCE((SELECT COUNT(*) FROM "Application"), 0) + 1);`,
+    );
+
+    this.logger.log('Seed complete');
     return { message: 'Seed complete', seeded: true };
   }
 
@@ -89,12 +94,10 @@ export class SeedService implements OnApplicationBootstrap {
 
     this.logger.warn('Resetting database...');
 
-    // Delete in dependency order
-    await this.prisma.auditLog.deleteMany();
-    await this.prisma.document.deleteMany();
-    await this.prisma.application.deleteMany();
-    await this.prisma.refreshToken.deleteMany();
-    await this.prisma.user.deleteMany();
+    // truncate cascade to bypass WORM triggers
+    await this.prisma.$executeRawUnsafe(
+      `TRUNCATE TABLE "AuditLog", "Document", "Application", "RefreshToken", "User" CASCADE;`,
+    );
 
     this.logger.warn('Database reset complete');
     return { message: 'Database reset complete' };

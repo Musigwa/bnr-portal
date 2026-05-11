@@ -73,8 +73,8 @@ export default function ApplicationDetailsPage() {
           return newState;
         });
       }, 1000);
-    } catch {
-      toast.error('Failed to download document');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to download document');
       setDownloadProgress(prev => {
         const newState = { ...prev };
         delete newState[documentId];
@@ -103,8 +103,8 @@ export default function ApplicationDetailsPage() {
           return newState;
         });
       }, 1000);
-    } catch {
-      toast.error('Failed to preview document');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to preview document');
       setDownloadProgress(prev => {
         const newState = { ...prev };
         delete newState[documentId];
@@ -131,8 +131,7 @@ export default function ApplicationDetailsPage() {
       window.URL.revokeObjectURL(url);
       a.remove();
     } catch (error) {
-      console.error('Batch download failed:', error);
-      toast.error('Failed to download documents archive');
+      toast.error(error instanceof Error ? error.message : 'Failed to download documents archive');
     } finally {
       setIsDownloadingAll(false);
     }

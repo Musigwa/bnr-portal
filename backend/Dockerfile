@@ -4,23 +4,32 @@ WORKDIR /app
 
 RUN apk add --no-cache libc6-compat openssl
 
-COPY package.json pnpm-lock.yaml ./
-COPY prisma.config.ts ./
-COPY prisma ./prisma/
-COPY src/utils/db-url.generator.ts ./src/utils/db-url.generator.ts
 # Configure PNPM home directory and add it to system PATH
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 # Enable Corepack (built into Node) to activate pnpm instantly without global npm downloads
 RUN corepack enable && corepack prepare pnpm@10.29.3 --activate
 
-# Use Docker BuildKit cache mount to persist the pnpm store directory across build executions
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --store-dir /pnpm/store
+# Copy root workspace configurations
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
+# Fetch dependencies
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch
+
+# Copy workspace source
 COPY . .
-RUN pnpm run build
-RUN npx esbuild prisma.config.ts --bundle --platform=node --format=cjs --outfile=prisma.config.js --footer:js="module.exports = module.exports.default || module.exports;"
-RUN pnpm prune --prod --ignore-scripts
+
+# Install dependencies offline
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install -r --offline
+
+# Build the backend and the standalone Prisma config
+RUN pnpm --filter @bnr-portal/backend run build
+
+# Deploy the backend and its production dependencies to an isolated folder
+RUN pnpm deploy --filter @bnr-portal/backend --prod --legacy /app/out
+
+# generate prisma client here so it lives in the out dir
+RUN cd /app/out && pnpm prisma generate
 
 # Stage 2 — Run
 FROM node:20-alpine AS runner
@@ -30,11 +39,9 @@ RUN apk add --no-cache libc6-compat openssl
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.js ./prisma.config.js
+# Copy isolated deployed app
+COPY --from=builder /app/out ./
+COPY --from=builder /app/backend/prisma.config.js ./prisma.config.js
 
 RUN mkdir -p uploads && chown -R appuser:appgroup /app
 

@@ -18,8 +18,7 @@ export function useTableQuery() {
       limit: Number(params.limit) || 10,
     };
 
-    // Enum filters (status, institutionType…) → uppercase for backend
-    // Free-text filters (refNumber, institutionName…) → preserve casing as typed
+    // enums uppercase, free-text keep casing
     const freeTextFields = ['refNumber', 'institutionName', 'startDate', 'endDate'];
     Object.keys(params).forEach(key => {
       if (key === 'page' || key === 'limit') return; // already set as numbers above
@@ -45,7 +44,7 @@ export function useTableQuery() {
       Object.entries(newParams).forEach(([key, value]) => {
         let stringValue = value !== undefined && value !== null ? String(value) : '';
         
-        // Preserve casing for free-text fields; lowercase enum values for URL cleanliness
+        // lowercase enums for url
         const freeTextFields = ['refNumber', 'institutionName', 'startDate', 'endDate'];
         if (!freeTextFields.includes(key) && key !== 'page' && key !== 'limit' && typeof value === 'string') {
           stringValue = stringValue.toLowerCase();
@@ -58,7 +57,7 @@ export function useTableQuery() {
         }
       });
 
-      // Reset to page 1 if any filter changed (except page itself)
+      // reset page on filter change
       const isPageChangeOnly = Object.keys(newParams).length === 1 && 'page' in newParams;
       if (!isPageChangeOnly && newParams.page === undefined) {
         current.delete('page');

@@ -26,13 +26,56 @@ services:
       retries: 5
 
   # ==========================================
+  # OBJECT STORAGE (MINIO)
+  # ==========================================
+  minio:
+    image: minio/minio:latest
+    profiles: ['development', 'production']
+    env_file:
+      - .env.${NODE_ENV}
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
+    ports:
+      - "${MINIO_PORT}:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - bnr_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio-setup:
+    image: minio/mc:latest
+    profiles: ['development', 'production']
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file:
+      - .env.${NODE_ENV}
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ACCESS_KEY:-admin} ${MINIO_SECRET_KEY:-admin123};
+      /usr/bin/mc mb myminio/${MINIO_BUCKET_NAME:-bnr-portal-documents} --ignore-existing;
+      /usr/bin/mc anonymous set public myminio/${MINIO_BUCKET_NAME:-bnr-portal-documents};
+      exit 0;
+      "
+    networks:
+      - bnr_network
+
+  # ==========================================
   # BACKEND - DEVELOPMENT
   # ==========================================
   backend-dev:
     profiles: ['development']
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     env_file:
       - .env.development
     ports:
@@ -48,6 +91,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - PORT=${BACKEND_PORT}
+      - MINIO_ENDPOINT=minio
     depends_on:
       postgres:
         condition: service_healthy
@@ -71,6 +115,11 @@ services:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=${MINIO_PORT:-9000}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-admin}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-admin123}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-bnr-portal-documents}
     depends_on:
       - postgres
     networks:
@@ -88,8 +137,8 @@ services:
   frontend-dev:
     profiles: ['development']
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
       args:
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     env_file:
@@ -135,6 +184,7 @@ services:
 
 volumes:
   postgres_data:
+  minio_data:
 
 networks:
   bnr_network:

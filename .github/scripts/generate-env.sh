@@ -92,4 +92,4 @@ fi
 # Atomic move to final location
 mv "$TEMP_OUTPUT" "$OUTPUT_FILE"
 
-log_info "✅ Environment file generated successfully: $OUTPUT_FILE"
+log_info "Environment file generated successfully: $OUTPUT_FILE"

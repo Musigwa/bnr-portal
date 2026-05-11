@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Document } from '@/types';
-import { Download, Eye, File as FileIcon } from 'lucide-react';
+import { Download, File as FileIcon } from 'lucide-react';
 
 interface DocumentListProps {
   documents: Document[];
@@ -69,17 +69,7 @@ export function DocumentList({ documents, onDownload, onPreview, downloadProgres
                   </div>
                 ) : (
                   <div className="flex gap-3">
-                    <Button 
-                      variant="secondary" 
-                      size="sm" 
-                      className="rounded-full px-5 h-10 text-xs font-bold shadow-2xl translate-y-3 group-hover:translate-y-0 transition-all duration-300 bg-white hover:bg-gray-100 text-black border-none"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPreview?.(doc.id, doc.fileName);
-                      }}
-                    >
-                      <Eye className="h-4 w-4 mr-2" /> Preview
-                    </Button>
+
                     <Button 
                       variant="default" 
                       size="sm" 

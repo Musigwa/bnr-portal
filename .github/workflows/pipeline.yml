@@ -1,0 +1,99 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'docker.compose.yml'
+      - '.github/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
+      - '!**.md'
+      - '!**/.gitignore'
+
+jobs:
+  quality:
+    name: Comprehensive Quality Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Node Environment
+        uses: ./.github/actions/setup-node-env
+
+      - name: Enforce Additive Migrations (No Data Loss)
+        run: |
+          if grep -r -i -E "DROP TABLE|DROP COLUMN" backend/prisma/migrations/ --include="*.sql" 2>/dev/null; then
+            echo "DESTRUCTIVE MIGRATION DETECTED! Because this portal manages strict regulatory data, you are NOT ALLOWED to drop columns or tables. Migrations must be strictly additive. Deprecate columns in the application layer instead."
+            exit 1
+          fi
+
+      - name: Verify All (Lint, Typecheck, Test, Build)
+        run: pnpm verify:all
+
+  detect-changes:
+    needs: quality
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '!backend/**/*.md'
+              - 'docker.compose.yml'
+              - '.github/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+            frontend:
+              - 'frontend/**'
+              - '!frontend/**/*.md'
+              - 'docker.compose.yml'
+              - '.github/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+
+  deploy-backend:
+    needs: [detect-changes]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.backend == 'true'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      service_name: backend
+      context: .
+      dockerfile: ./backend/Dockerfile
+      image_name: ${{ github.repository }}-backend
+      project_name: ${{ github.event.repository.name }}
+    secrets: inherit
+
+  deploy-frontend:
+    needs: [detect-changes]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.frontend == 'true'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      service_name: frontend
+      context: .
+      dockerfile: ./frontend/Dockerfile
+      image_name: ${{ github.repository }}-frontend
+      project_name: ${{ github.event.repository.name }}
+    secrets: inherit

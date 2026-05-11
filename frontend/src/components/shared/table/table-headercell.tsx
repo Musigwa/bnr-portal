@@ -38,7 +38,7 @@ export function TableHeaderCell<T>({
     setInputValue(filterValue);
   }
 
-  // Debounce filter — mirrors the 500ms delay from the toolbar search bar
+  // debounce to match toolbar
   useEffect(() => {
     if (col.filterType !== 'input') return;
     const timer = setTimeout(() => {
@@ -59,7 +59,7 @@ export function TableHeaderCell<T>({
   }, [isEditing, col.filterType]);
 
   const handleBlur = () => {
-    // Debounce already covers apply-on-blur; just close if empty
+    // close if empty
     if (!inputValue) {
       setEditingKey(null);
     }
@@ -67,7 +67,7 @@ export function TableHeaderCell<T>({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      // Apply immediately, bypassing the debounce
+      // bypass debounce
       onFilterChange?.(col.filterKey!, e.currentTarget.value);
       if (!e.currentTarget.value) setEditingKey(null);
     } else if (e.key === 'Escape') {

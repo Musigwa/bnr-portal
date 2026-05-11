@@ -28,10 +28,15 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 ### Run Development Server
 
+To ensure the backend and required Docker infrastructure start correctly alongside the frontend, **always run the development server from the workspace root**:
+
 ```bash
+cd ..
 pnpm install
 pnpm dev
 ```
+
+*This uses Turborepo to seamlessly orchestrate the environment.*
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 

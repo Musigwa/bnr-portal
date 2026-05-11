@@ -3,6 +3,7 @@ import { useAuth } from '@/providers/auth.provider';
 import { apiClient } from '@/lib/api-client';
 import { Role } from '@/types';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { notify } from '@/lib/notifications';
 
 export function useLogin() {
   const { login: authLogin } = useAuth();
@@ -24,6 +25,9 @@ export function useLogin() {
       } else {
         router.push('/dashboard');
       }
+    },
+    onError: (error: { message?: string }) => {
+      notify.error(error.message || 'Failed to login');
     },
   });
 }

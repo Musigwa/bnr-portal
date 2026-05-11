@@ -3,9 +3,10 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
-import { AuditService } from '../audit/audit.service';
+import { PrismaService } from '@/infrastructure/database/prisma.service';
+import { AuditService } from '@/domains/audit/audit.service';
 import {
   ApplicationStatus,
   Role,
@@ -14,7 +15,7 @@ import {
   Prisma,
   PrismaClient,
 } from '@prisma/client';
-import { refNumberExtension } from '../../database/extensions/ref-number.extension';
+import { refNumberExtension } from '@/infrastructure/database/extensions/ref-number.extension';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { QueryApplicationsDto } from './dto/query-applications.dto';
@@ -28,7 +29,7 @@ import {
   assertValidTransition,
   Transition,
 } from './applications.state-machine';
-import { logForensic } from '../../common/utils/forensic-logger';
+import { logForensic } from '@/common/utils/forensic-logger';
 
 @Injectable()
 export class ApplicationsService {
@@ -171,7 +172,7 @@ export class ApplicationsService {
     const { startDate, endDate } = query;
     const where: Prisma.ApplicationWhereInput = { AND: [] };
 
-    // Role-based scoping ensures users only see stats for apps they can access
+    // enforce role scoping
     if (user.role === Role.APPLICANT) {
       (where.AND as Prisma.ApplicationWhereInput[]).push({
         applicantId: user.id,
@@ -252,12 +253,12 @@ export class ApplicationsService {
   }
 
   private async resolveId(identifier: string): Promise<string> {
-    // 1. If it looks like a UUID, assume it's an ID
+    // 1. try uuid
     if (identifier.length === 36 && identifier.split('-').length === 5) {
       return identifier;
     }
 
-    // 2. If it matches BNR format (BNR-YYYY-NNNN), look up by RefNumber
+    // 2. try BNR ref format
     if (identifier.startsWith('BNR-')) {
       const app = await this.findByRefNumber(identifier);
       if (!app) {
@@ -268,7 +269,7 @@ export class ApplicationsService {
       return app.id;
     }
 
-    // 3. Fallback: try direct ID lookup if it's not a UUID but might be a custom ID
+    // 3. fallback to raw ID
     const app = await this.findById(identifier);
     if (!app) {
       throw new NotFoundException(`Application ${identifier} not found`);
@@ -455,7 +456,7 @@ export class ApplicationsService {
     await this.findOne(id, user);
     const logs = await this.audit.getByApplication(id);
 
-    // If applicant, mask other actors' details for privacy/security, but keep their own
+    // mask official details if applicant
     if (user.role === Role.APPLICANT) {
       return logs.map((log) => {
         const isSelf = log.actorId === user.id;
@@ -517,9 +518,10 @@ export class ApplicationsService {
         return updated;
       });
     } catch (error) {
-      console.error(
+      Logger.error(
         `[FORENSIC ERROR] Transition ${transitionName} failed:`,
-        error,
+        error instanceof Error ? error.stack : String(error),
+        'ApplicationsService',
       );
       logForensic(`Transition ${transitionName} failed for app ${id}`, error);
       throw error;

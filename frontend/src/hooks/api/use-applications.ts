@@ -142,7 +142,7 @@ export function useRejectApplication() {
       apiClient.post(`/applications/${id}/reject`, { rejectionReason }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
-      notify.info('Application rejected successfully');
+      notify.error('Application rejected successfully');
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to reject application');
@@ -188,7 +188,7 @@ export function useDeleteDocument() {
       apiClient.delete(`/applications/${applicationId}/documents/${documentId}`),
     onSuccess: (_, { applicationId }) => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.details(applicationId) });
-      notify.info('Document deleted successfully');
+      notify.error('Document deleted successfully');
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to delete document');

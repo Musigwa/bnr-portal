@@ -11,16 +11,14 @@ import {
   Delete,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import type { Response } from 'express';
-import * as path from 'path';
 import { DocumentsService } from './documents.service';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { StorageService } from '@/infrastructure/storage/storage.service';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import type { User } from '@prisma/client';
-import * as fs from 'fs';
-import { ZipArchive } from 'archiver';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -33,7 +31,10 @@ import {
 @ApiBearerAuth('access-token')
 @Controller('applications/:applicationId/documents')
 export class DocumentsController {
-  constructor(private service: DocumentsService) {}
+  constructor(
+    private service: DocumentsService,
+    private storage: StorageService,
+  ) {}
 
   @ApiOperation({ summary: 'Upload document — max 5MB' })
   @ApiConsumes('multipart/form-data')
@@ -50,16 +51,7 @@ export class DocumentsController {
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: (_req, _file, cb) => {
-          const dir = path.join(process.cwd(), 'uploads');
-          cb(null, dir);
-        },
-        filename: (_req, file, cb) => {
-          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-          cb(null, `${unique}-${file.originalname}`);
-        },
-      }),
+      storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
@@ -96,6 +88,9 @@ export class DocumentsController {
       user,
     );
 
+    // dynamic import to bypass jest ESM choke
+    const { ZipArchive } = await import('archiver');
+
     const archive = new ZipArchive({
       zlib: { level: 9 }, // Maximum compression
     });
@@ -114,9 +109,15 @@ export class DocumentsController {
 
     archive.pipe(res);
 
+    // Fetch all readable streams from S3 concurrently
+    const storageKeys = documents.map((doc) => doc.storagePath);
+    const streams = await this.storage.getFileStreams(storageKeys);
+
+    // Append each stream to the ZIP archive
     for (const doc of documents) {
-      if (fs.existsSync(doc.storagePath)) {
-        archive.file(doc.storagePath, { name: doc.fileName });
+      const match = streams.find((s) => s.key === doc.storagePath);
+      if (match) {
+        archive.append(match.stream, { name: doc.fileName });
       }
     }
 
@@ -133,7 +134,16 @@ export class DocumentsController {
     @Res() res: Response,
   ) {
     const doc = await this.service.download(applicationId, documentId, user);
-    res.download(doc.storagePath, doc.fileName);
+
+    res.setHeader('Content-Type', doc.mimeType);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${doc.fileName}"`,
+    );
+
+    // Stream directly from S3 to the client
+    const stream = await this.storage.getFileStream(doc.storagePath);
+    stream.pipe(res);
   }
 
   @ApiOperation({ summary: 'Delete document' })

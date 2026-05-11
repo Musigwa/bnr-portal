@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+
 import { Landmark } from 'lucide-react';
 import { useLogin } from '@/hooks/api/use-auth';
 
@@ -20,8 +20,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
-  const { mutate: login, isPending: isLoading, error: loginError } = useLogin();
-  const [apiError, setApiError] = useState<string | null>(null);
+  const { mutate: login, isPending: isLoading } = useLogin();
 
   const {
     register,
@@ -36,11 +35,8 @@ export function LoginForm() {
   });
 
   const onSubmit = (data: LoginFormValues) => {
-    setApiError(null);
     login(data);
   };
-
-  const displayedError = apiError || (loginError as { message?: string })?.message;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -60,11 +56,6 @@ export function LoginForm() {
         </CardHeader>
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }}>
           <CardContent className="space-y-5">
-            {displayedError && (
-              <Alert variant="destructive">
-                <AlertDescription>{displayedError}</AlertDescription>
-              </Alert>
-            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input

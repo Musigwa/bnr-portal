@@ -2,7 +2,7 @@
 
 import { useGetApplicationById } from '@/hooks/api/use-applications';
 import { useParams } from 'next/navigation';
-import { ApplicationForm } from '../../new/_components/application-form';
+import { ApplicationForm } from '@/app/(protected)/applications/new/_components/application-form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
