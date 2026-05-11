@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   # ==========================================
   # DATABASE
@@ -21,6 +19,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - bnr_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # ==========================================
   # BACKEND - DEVELOPMENT
@@ -38,13 +41,16 @@ services:
     environment:
       - CONTAINER_ENV=true
       - NODE_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
       # We hardcode 5432 here because that is the port used INSIDE the Docker network to talk to Postgres.
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - PORT=${BACKEND_PORT}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - bnr_network
 

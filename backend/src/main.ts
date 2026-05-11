@@ -5,11 +5,14 @@ import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { DocumentsService } from './domains/documents/documents.service';
 import helmet from 'helmet';
+import { AppConfigService } from './config/config.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const appUrl = process.env.APP_URL;
+  const config = app.get(AppConfigService);
+  const appUrl = config.get<string>('app.url');
+  const appPort = config.get<string>('app.port');
   const isHttps = appUrl?.startsWith('https://');
 
   app.use(
@@ -43,7 +46,7 @@ async function bootstrap() {
   app.enableCors();
 
   // Swagger
-  const config = new DocumentBuilder()
+  const swaggerConfig = new DocumentBuilder()
     .setTitle('BNR Bank Licensing & Compliance Portal')
     .setDescription(
       'API for managing bank licensing applications, documents, and compliance workflows',
@@ -55,7 +58,7 @@ async function bootstrap() {
     )
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: { persistAuthorization: true },
     customSiteTitle: 'BNR Bank Licensing & Compliance Portal',
@@ -63,11 +66,10 @@ async function bootstrap() {
 
   app.get(DocumentsService).ensureUploadDir();
 
-  const PORT = parseInt(process.env.PORT!, 10);
-
-  await app.listen(PORT);
-  console.log(`🚀 API running at http://localhost:${PORT}/api`);
-  console.log(`📖 Swagger docs at http://localhost:${PORT}/api/docs`);
+  console.log('PORT====>', appPort);
+  await app.listen(appPort);
+  console.log(`🚀 API running at http://localhost:${appPort}/api`);
+  console.log(`📖 Swagger docs at http://localhost:${appPort}/api/docs`);
 }
 bootstrap().catch((error) => {
   console.error('Application bootstrap failed:', error);
