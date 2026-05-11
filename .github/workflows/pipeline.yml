@@ -1,6 +1,12 @@
 name: CI/CD Pipeline
 
 on:
+  workflow_dispatch:
+    inputs:
+      clean_infra:
+        description: 'Wipe database and storage volumes before deploying'
+        type: boolean
+        default: false
   pull_request:
     branches: [ main ]
   push:
@@ -38,7 +44,7 @@ jobs:
 
   detect-changes:
     needs: quality
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
@@ -68,9 +74,30 @@ jobs:
               - 'pnpm-workspace.yaml'
               - 'turbo.json'
 
+  clean-infrastructure:
+    if: github.event.inputs.clean_infra == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wipe VPS infrastructure
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            cd /opt/deploy/${{ github.event.repository.name }} || exit 0
+            docker compose -f docker.compose.yml down -v --remove-orphans || true
+            docker system prune -af --volumes || true
+
   deploy-backend:
-    needs: [detect-changes]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.backend == 'true'
+    needs: [detect-changes, clean-infrastructure]
+    if: |
+      always() &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
+      needs.detect-changes.outputs.backend == 'true' &&
+      (needs.clean-infrastructure.result == 'success' || needs.clean-infrastructure.result == 'skipped')
     permissions:
       contents: read
       packages: write
@@ -84,8 +111,13 @@ jobs:
     secrets: inherit
 
   deploy-frontend:
-    needs: [detect-changes]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.frontend == 'true'
+    needs: [detect-changes, deploy-backend]
+    if: |
+      always() &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
+      needs.detect-changes.outputs.frontend == 'true' &&
+      (needs.deploy-backend.result == 'success' || needs.deploy-backend.result == 'skipped')
     permissions:
       contents: read
       packages: write

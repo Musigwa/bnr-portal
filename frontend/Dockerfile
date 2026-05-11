@@ -1,4 +1,14 @@
-# Stage 1 — Build
+FROM node:20-alpine AS pruner
+WORKDIR /app
+RUN apk add --no-cache libc6-compat
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@10.29.3 --activate
+RUN pnpm install -g turbo@^2
+COPY . .
+RUN turbo prune --scope=@bnr-portal/frontend --docker
+
+# Stage 2 — Build
 FROM node:20-alpine AS builder
 WORKDIR /app
 
@@ -9,17 +19,18 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@10.29.3 --activate
 
-# Copy root workspace configurations
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Copy pruned workspace json files to cache dependency installation
+COPY --from=pruner /app/out/json/ .
 
 # Fetch dependencies
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch
 
-# Copy workspace source
-COPY . .
-
-# Install dependencies offline
+# Copy the lockfile and install offline
+COPY --from=pruner /app/out/pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install -r --offline
+
+# Copy the rest of the pruned source code
+COPY --from=pruner /app/out/full/ .
 
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL

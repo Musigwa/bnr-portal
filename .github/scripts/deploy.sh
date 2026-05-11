@@ -15,7 +15,7 @@ if [ -z "$SERVICE" ] || [ -z "$TAG" ]; then
   exit 1
 fi
 
-echo "🚀 Deploying $SERVICE with tag $TAG..."
+echo "Deploying $SERVICE with tag $TAG..."
 
 export IMAGE_TAG=$TAG
 export GITHUB_REPOSITORY_OWNER=${GITHUB_REPOSITORY_OWNER:-musigwa}
