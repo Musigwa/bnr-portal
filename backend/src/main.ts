@@ -4,10 +4,32 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { DocumentsService } from './domains/documents/documents.service';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const appUrl = process.env.APP_URL;
+  const isHttps = appUrl?.startsWith('https://');
+
+  app.use(
+    helmet({
+      hsts: isHttps ? undefined : false,
+      crossOriginOpenerPolicy: isHttps ? { policy: 'same-origin' } : false,
+      crossOriginResourcePolicy: isHttps ? { policy: 'same-origin' } : false,
+      crossOriginEmbedderPolicy: isHttps ? undefined : false,
+      contentSecurityPolicy: isHttps
+        ? {
+            directives: {
+              defaultSrc: ["'self'"],
+              styleSrc: ["'self'", "'unsafe-inline'"],
+              scriptSrc: ["'self'", "'unsafe-inline'"],
+              imgSrc: ["'self'", 'data:', 'https:', 'validator.swagger.io'],
+            },
+          }
+        : false,
+    }),
+  );
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -36,17 +58,16 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: { persistAuthorization: true },
+    customSiteTitle: 'BNR Bank Licensing & Compliance Portal',
   });
 
   app.get(DocumentsService).ensureUploadDir();
 
-  await app.listen(process.env.PORT ?? 3001);
-  console.log(
-    `🚀 API running at http://localhost:${process.env.PORT ?? 3001}/api`,
-  );
-  console.log(
-    `📖 Swagger docs at http://localhost:${process.env.PORT ?? 3001}/api/docs`,
-  );
+  const PORT = parseInt(process.env.PORT!, 10);
+
+  await app.listen(PORT);
+  console.log(`🚀 API running at http://localhost:${PORT}/api`);
+  console.log(`📖 Swagger docs at http://localhost:${PORT}/api/docs`);
 }
 bootstrap().catch((error) => {
   console.error('Application bootstrap failed:', error);

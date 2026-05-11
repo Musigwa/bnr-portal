@@ -1,15 +1,16 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
+import { Public } from 'src/common/decorators/public.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
-import { Public } from 'src/common/decorators/public.decorator';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiUnauthorizedResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -20,6 +21,7 @@ export class AuthController {
   @ApiOkResponse({ description: 'Returns access and refresh tokens' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @Public()
+  @Throttle({ short: { ttl: 60000, limit: 5 } }) // 5 attempts per minute
   @Post('login')
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto) {
@@ -29,6 +31,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiOkResponse({ description: 'Returns new access token' })
   @Public()
+  @Throttle({ short: { ttl: 60000, limit: 10 } })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   refresh(@Body() dto: RefreshDto) {
