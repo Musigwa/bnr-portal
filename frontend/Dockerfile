@@ -3,8 +3,15 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm
-RUN pnpm install --frozen-lockfile
+# Configure PNPM home directory and add it to system PATH
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+# Enable Corepack (built into Node) to activate pnpm instantly without global npm downloads
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Use Docker BuildKit cache mount to persist the pnpm store directory across build executions
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm config set store-dir /pnpm/store
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 COPY . .
 ARG NEXT_PUBLIC_API_URL

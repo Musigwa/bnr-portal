@@ -25,16 +25,48 @@ jobs:
           node-version: 20
       - name: Install pnpm
         uses: pnpm/action-setup@v4
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+        id: pnpm-cache
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Cache TypeScript Build Info
+        uses: actions/cache@v4
+        with:
+          path: |
+            backend/tsconfig.tsbuildinfo
+            frontend/tsconfig.tsbuildinfo
+          key: ${{ runner.os }}-tsconfig-cache-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-tsconfig-cache-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
       - name: Generate Prisma client
         run: pnpm -r postinstall
-      - name: Quality Check
+
+      - name: Quality Check (Parallel Lint & Typecheck)
         run: |
-          pnpm --filter @bnr-portal/frontend lint
-          pnpm --filter @bnr-portal/frontend typecheck
-          pnpm --filter @bnr-portal/backend lint
-          pnpm --filter @bnr-portal/backend typecheck
+          pnpm --filter @bnr-portal/frontend lint & pid1=$!
+          pnpm --filter @bnr-portal/frontend typecheck & pid2=$!
+          pnpm --filter @bnr-portal/backend lint & pid3=$!
+          pnpm --filter @bnr-portal/backend typecheck & pid4=$!
+          
+          # Wait for all processes and propagate failure if any exit code is non-zero
+          wait $pid1 && wait $pid2 && wait $pid3 && wait $pid4
+
+
 
   detect-changes:
     needs: quality

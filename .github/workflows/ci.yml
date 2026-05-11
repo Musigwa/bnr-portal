@@ -35,18 +35,29 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
+      - name: Cache TypeScript Build Info
+        uses: actions/cache@v4
+        with:
+          path: |
+            backend/tsconfig.tsbuildinfo
+            frontend/tsconfig.tsbuildinfo
+          key: ${{ runner.os }}-tsconfig-cache-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-tsconfig-cache-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma client
         run: pnpm -r postinstall
 
-      - name: Frontend Quality Check
+      - name: Quality Check (Parallel Lint & Typecheck)
         run: |
-          pnpm --filter @bnr-portal/frontend lint
-          pnpm --filter @bnr-portal/frontend typecheck
+          pnpm --filter @bnr-portal/frontend lint & pid1=$!
+          pnpm --filter @bnr-portal/frontend typecheck & pid2=$!
+          pnpm --filter @bnr-portal/backend lint & pid3=$!
+          pnpm --filter @bnr-portal/backend typecheck & pid4=$!
+          
+          # Wait for all processes and propagate failure if any exit code is non-zero
+          wait $pid1 && wait $pid2 && wait $pid3 && wait $pid4
 
-      - name: Backend Quality Check
-        run: |
-          pnpm --filter @bnr-portal/backend lint
-          pnpm --filter @bnr-portal/backend typecheck
