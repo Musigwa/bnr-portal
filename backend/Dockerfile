@@ -28,10 +28,13 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch
 
 # Copy the lockfile and install offline
 COPY --from=pruner /app/out/pnpm-lock.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install -r --offline
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install -r --offline --ignore-scripts
 
 # Copy the rest of the pruned source code
 COPY --from=pruner /app/out/full/ .
+
+# Generate Prisma Client manually now that the schema is copied
+RUN pnpm --filter @bnr-portal/backend exec prisma generate
 
 # Build the backend and the standalone Prisma config
 RUN pnpm --filter @bnr-portal/backend run build

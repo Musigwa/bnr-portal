@@ -27,7 +27,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch
 
 # Copy the lockfile and install offline
 COPY --from=pruner /app/out/pnpm-lock.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install -r --offline
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install -r --offline --ignore-scripts
 
 # Copy the rest of the pruned source code
 COPY --from=pruner /app/out/full/ .

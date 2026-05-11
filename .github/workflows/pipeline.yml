@@ -90,42 +90,62 @@ jobs:
             docker compose -f docker.compose.yml down -v --remove-orphans || true
             docker system prune -af --volumes || true
 
-  deploy-backend:
-    needs: [detect-changes, clean-infrastructure]
+  build-backend:
+    needs: [detect-changes]
     if: |
       always() &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       github.ref == 'refs/heads/main' &&
-      needs.detect-changes.outputs.backend == 'true' &&
-      (needs.clean-infrastructure.result == 'success' || needs.clean-infrastructure.result == 'skipped')
+      needs.detect-changes.outputs.backend == 'true'
     permissions:
       contents: read
       packages: write
-    uses: ./.github/workflows/deploy.yml
+    uses: ./.github/workflows/build.yml
     with:
-      service_name: backend
       context: .
       dockerfile: ./backend/Dockerfile
       image_name: ${{ github.repository }}-backend
+    secrets: inherit
+
+  build-frontend:
+    needs: [detect-changes]
+    if: |
+      always() &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
+      needs.detect-changes.outputs.frontend == 'true'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build.yml
+    with:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+      image_name: ${{ github.repository }}-frontend
+    secrets: inherit
+
+  deploy-backend:
+    needs: [detect-changes, build-backend, clean-infrastructure]
+    if: |
+      always() &&
+      needs.detect-changes.outputs.backend == 'true' &&
+      (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') &&
+      (needs.clean-infrastructure.result == 'success' || needs.clean-infrastructure.result == 'skipped')
+    uses: ./.github/workflows/deploy.yml
+    with:
+      service_name: backend
       project_name: ${{ github.event.repository.name }}
     secrets: inherit
 
   deploy-frontend:
-    needs: [detect-changes, deploy-backend]
+    needs: [detect-changes, build-frontend, deploy-backend]
     if: |
       always() &&
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
-      github.ref == 'refs/heads/main' &&
       needs.detect-changes.outputs.frontend == 'true' &&
+      (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped') &&
       (needs.deploy-backend.result == 'success' || needs.deploy-backend.result == 'skipped')
-    permissions:
-      contents: read
-      packages: write
     uses: ./.github/workflows/deploy.yml
     with:
       service_name: frontend
-      context: .
-      dockerfile: ./frontend/Dockerfile
-      image_name: ${{ github.repository }}-frontend
       project_name: ${{ github.event.repository.name }}
     secrets: inherit
