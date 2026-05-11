@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { JwtAuthGuard } from './common/guards/jwt.auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { PrismaModule } from './database/prisma.module';
 import { ApplicationsModule } from './domains/applications/applications.module';
 import { AuditModule } from './domains/audit/audit.module';
@@ -32,4 +33,8 @@ import { UsersModule } from './domains/users/users.module';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}

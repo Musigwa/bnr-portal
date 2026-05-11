@@ -7,11 +7,12 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { Role, type User } from '@prisma/client';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
 
 @ApiTags('users')
 @ApiBearerAuth('access-token')
@@ -19,6 +20,15 @@ import { UsersService } from './users.service';
 @Roles(Role.ADMIN)
 export class UsersController {
   constructor(private service: UsersService) {}
+
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiOkResponse({ description: 'Current user profile' })
+  @Get('me')
+  @Roles(Role.APPLICANT, Role.REVIEWER, Role.APPROVER, Role.ADMIN)
+  me(@CurrentUser() user: User) {
+    const { passwordHash: _, ...result } = user;
+    return result;
+  }
 
   @ApiOperation({ summary: 'List all users' })
   @ApiOkResponse({ description: 'List of users' })

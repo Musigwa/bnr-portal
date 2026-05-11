@@ -1,0 +1,52 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: bnr
+      POSTGRES_PASSWORD: bnr_secret
+      POSTGRES_DB: bnr_portal
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bnr_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://bnr:bnr_secret@postgres:5432/bnr_portal
+      JWT_SECRET: super_secret_jwt_key_change_in_prod
+      JWT_REFRESH_SECRET: super_secret_refresh_key_change_in_prod
+      PORT: 3001
+      NODE_ENV: production
+    depends_on:
+      - postgres
+    networks:
+      - bnr_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    depends_on:
+      - backend
+    networks:
+      - bnr_network
+
+volumes:
+  postgres_data:
+
+networks:
+  bnr_network:
+    driver: bridge
