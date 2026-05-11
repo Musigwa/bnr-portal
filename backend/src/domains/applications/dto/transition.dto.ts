@@ -8,7 +8,7 @@ export class RequestInfoDto {
   })
   @IsString()
   @MinLength(10)
-  notes: string;
+  notes!: string;
 }
 
 export class CompleteReviewDto {
@@ -18,7 +18,7 @@ export class CompleteReviewDto {
   })
   @IsString()
   @MinLength(10)
-  reviewerNotes: string;
+  reviewerNotes!: string;
 }
 
 export class RejectDto {
@@ -28,7 +28,7 @@ export class RejectDto {
   })
   @IsString()
   @MinLength(10)
-  rejectionReason: string;
+  rejectionReason!: string;
 }
 
 export class ApproveDto {
@@ -38,5 +38,5 @@ export class ApproveDto {
   })
   @IsString()
   @MinLength(5)
-  notes: string;
+  notes!: string;
 }

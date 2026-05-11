@@ -50,7 +50,7 @@ export class ApplicationsController {
     return this.service.create(user, dto);
   }
 
-  @ApiOperation({ summary: 'List applications — filtered by role' })
+  @ApiOperation({ summary: 'List applications — filtered by status' })
   @ApiQuery({ name: 'status', enum: ApplicationStatus, required: false })
   @ApiOkResponse({ description: 'List of applications' })
   @Get()

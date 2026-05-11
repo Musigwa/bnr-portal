@@ -1,0 +1,127 @@
+services:
+  # ==========================================
+  # DATABASE (INFRA)
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    profiles: ['development', 'infra']
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # OBJECT STORAGE (MINIO) (INFRA)
+  # ==========================================
+  minio:
+    image: minio/minio:latest
+    profiles: ['development', 'infra']
+    env_file:
+      - .env
+    environment:
+      - MINIO_ROOT_USER=${S3_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${S3_SECRET_KEY}
+    ports:
+      - "${S3_PORT}:9000"
+      - "${S3_CONSOLE_PORT}:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio-setup:
+    image: minio/mc:latest
+    profiles: ['development', 'infra']
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file:
+      - .env
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 ${S3_ACCESS_KEY} ${S3_SECRET_KEY};
+      /usr/bin/mc mb myminio/${S3_BUCKET_NAME} --ignore-existing;
+      /usr/bin/mc anonymous set public myminio/${S3_BUCKET_NAME};
+      exit 0;
+      "
+
+  # ==========================================
+  # BACKEND - PRODUCTION (BLUE/GREEN)
+  # ==========================================
+  backend:
+    container_name: ${APP_NAME:-bnr-portal}-backend${CONTAINER_SUFFIX:-}
+    profiles: ['production']
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-musigwa}/${APP_NAME:-bnr-portal}-backend:${IMAGE_TAG:-latest}
+    env_file:
+      - .env
+    ports:
+      # Ephemeral host port, dynamic container port
+      - "0:${BACKEND_PORT}"
+    environment:
+      - NODE_ENV=production
+      - APP_NAME=${APP_NAME:-bnr-portal}
+      - DOMAIN_ROOT=${DOMAIN_ROOT}
+      - DB_HOST=postgres
+      - DB_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - S3_ENDPOINT=minio
+      - S3_PORT=9000
+    networks:
+      - default
+      - observability-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:$$BACKEND_PORT/health/liveness || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # FRONTEND - PRODUCTION (BLUE/GREEN)
+  # ==========================================
+  frontend:
+    container_name: ${APP_NAME:-bnr-portal}-frontend${CONTAINER_SUFFIX:-}
+    profiles: ['production']
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-musigwa}/${APP_NAME:-bnr-portal}-frontend:${IMAGE_TAG:-latest}
+    env_file:
+      - .env
+    ports:
+      # Ephemeral host port, dynamic container port
+      - "0:${NEXT_FRONTEND_PORT}"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=https://api.${APP_NAME:-bnr-portal}.${DOMAIN_ROOT}
+      - PORT=${NEXT_FRONTEND_PORT}
+      - HOSTNAME=0.0.0.0
+    networks:
+      - default
+      - observability-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:$$PORT/ || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  default:
+    name: ${APP_NAME:-bnr-portal}-network
+    external: true # Managed by deploy script (created before containers start)
+  observability-network:
+    external: true # Managed by Observability Stack

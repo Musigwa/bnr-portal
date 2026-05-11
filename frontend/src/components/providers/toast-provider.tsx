@@ -4,10 +4,10 @@ import { Toaster } from 'sonner';
 
 export function ToastProvider() {
   return (
-    <Toaster 
-      position="top-right" 
-      richColors 
-      closeButton 
+    <Toaster
+      position="top-right"
+      richColors
+      closeButton
       theme="system"
       toastOptions={{
         style: {

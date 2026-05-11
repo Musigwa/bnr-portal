@@ -23,11 +23,11 @@ model Application {
     approverId String?
     approver   User?   @relation("ApproverApplications", fields: [approverId], references: [id])
 
-    institutionName    String
-    institutionType    String
-    registrationNumber String?
-    proposedCapital    Decimal?
-    applicantNotes     String?
+    institutionId   String
+    institution     Institution @relation(fields: [institutionId], references: [id])
+    
+    proposedCapital Decimal?
+    applicantNotes  String?
     reviewerNotes      String?
     rejectionReason    String?
 

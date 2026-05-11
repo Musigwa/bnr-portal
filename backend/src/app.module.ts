@@ -1,5 +1,6 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { AppConfigModule } from './config/config.module';
+import { AppConfigService } from './config/config.service';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { JwtAuthGuard } from './common/guards/jwt.auth.guard';
@@ -16,11 +17,22 @@ import { PrismaModule } from './infrastructure/database/prisma.module';
 @Module({
   imports: [
     AppConfigModule,
-    ThrottlerModule.forRoot([
-      { name: 'short', ttl: 1000, limit: 10 },
-      { name: 'medium', ttl: 10000, limit: 50 },
-      { name: 'long', ttl: 60000, limit: 200 },
-    ]),
+    ThrottlerModule.forRootAsync({
+      imports: [AppConfigModule],
+      inject: [AppConfigService],
+      useFactory: (config: AppConfigService) => [
+        {
+          name: 'short',
+          ttl: config.get<number>('throttling.shortTtlSec') * 1000,
+          limit: config.get<number>('throttling.shortLimitReq'),
+        },
+        {
+          name: 'long',
+          ttl: config.get<number>('throttling.ttlSec') * 1000,
+          limit: config.get<number>('throttling.limitReq'),
+        },
+      ],
+    }),
     PrismaModule,
     AuthModule,
     UsersModule,

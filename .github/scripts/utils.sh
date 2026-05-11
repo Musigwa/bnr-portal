@@ -95,7 +95,7 @@ timer_end() {
 }
 
 # ------------------------------------------------------------------------------
-# Wise Rollback Framework
+# Wise Rollback Framework: Keeps a stack of "undo" commands to execute in reverse order on failure.
 # ------------------------------------------------------------------------------
 ROLLBACK_STACK=()
 
@@ -115,16 +115,19 @@ execute_rollbacks() {
     
     log_warn "Executing Rollback Stack (Total: ${#ROLLBACK_STACK[@]} commands)..."
     for cmd in "${ROLLBACK_STACK[@]}"; do
-        log_warn "   Undoing: $cmd"
+        log_warn "Undoing: $cmd"
+        # We use eval to support complex commands with pipes/redirects
         if ! eval "$cmd"; then
-            log_error "      Rollback command failed: $cmd"
+            log_error "Rollback command failed: $cmd"
         fi
     done
+    # Clear stack after execution
     ROLLBACK_STACK=()
     log_info "Rollback completed."
 }
 
 # Global failure handler to be used with trap
+# Usage: trap 'handle_error $? $LINENO' ERR
 handle_error() {
     local exit_code=$1
     local line_no=$2

@@ -18,11 +18,10 @@ out/
 build/
 next-env.d.ts
 
-# NestJS / Prisma (Backend)
+# Compiled Outputs (Backend / Packages)
 dist/
+lib/
 uploads/
-generated/prisma/
-backend/prisma.config.js
 
 # Testing
 coverage/

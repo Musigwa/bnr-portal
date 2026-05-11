@@ -1,3 +1,5 @@
+'use client';
+
 import { Label } from '@/components/ui/label';
 import { Upload, FileText } from 'lucide-react';
 import React from 'react';
@@ -10,6 +12,7 @@ interface DocumentUploadProps {
   handleDrop: (e: React.DragEvent<HTMLDivElement>) => void;
   removeFile: (index: number) => void;
   removeExistingDoc: (docId: string) => void;
+  maxFileSizeMb: number;
 }
 
 export function DocumentUpload({
@@ -19,13 +22,16 @@ export function DocumentUpload({
   handleDrop,
   removeFile,
   removeExistingDoc,
+  maxFileSizeMb,
 }: DocumentUploadProps) {
   return (
     <div className="flex flex-col space-y-2">
       <Label className="text-foreground/90">Documents</Label>
       <div
-        className={`flex-1 flex flex-col border-2 border-dashed border-border rounded-xl p-5 hover:bg-muted/30 transition-colors cursor-pointer ${
-          files.length === 0 && existingDocs.length === 0 ? 'items-center justify-center text-center' : ''
+        className={`border-border hover:bg-muted/30 flex flex-1 cursor-pointer flex-col rounded-xl border-2 border-dashed p-5 transition-colors ${
+          files.length === 0 && existingDocs.length === 0
+            ? 'items-center justify-center text-center'
+            : ''
         }`}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
@@ -33,41 +39,61 @@ export function DocumentUpload({
       >
         {files.length === 0 && existingDocs.length === 0 ? (
           <>
-            <Upload className="h-6 w-6 text-primary mb-2" />
-            <p className="mt-1 text-sm font-medium text-foreground/90">
+            <Upload className="text-primary mb-2 h-6 w-6" />
+            <p className="text-foreground/90 mt-1 text-sm font-medium">
               Drag and drop files here, or click to select
             </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Max file size: 5MB per document
+            <p className="text-muted-foreground mt-1 text-sm">
+              Max file size: {maxFileSizeMb}MB per document
             </p>
           </>
         ) : (
           <div className="w-full">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-sm font-semibold text-foreground/90">Selected Files</span>
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-foreground/90 text-sm font-semibold">
+                Selected Files
+              </span>
             </div>
-            <div 
-              className="w-full flex flex-wrap gap-3 cursor-default" 
+            <div
+              className="flex w-full cursor-default flex-wrap gap-3"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Existing Documents */}
               {existingDocs.map((doc) => (
-                <div key={doc.id} className="relative group flex flex-col items-center justify-center w-28 h-28 border border-primary/20 rounded-xl bg-primary/5 shadow-sm overflow-hidden hover:border-primary transition-all">
+                <div
+                  key={doc.id}
+                  className="group border-primary/20 bg-primary/5 hover:border-primary relative flex h-28 w-28 flex-col items-center justify-center overflow-hidden rounded-xl border shadow-sm transition-all"
+                >
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       removeExistingDoc(doc.id);
                     }}
-                    className="absolute top-1 right-1 bg-card shadow-sm border text-destructive hover:bg-destructive/10 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    className="bg-card text-destructive hover:bg-destructive/10 absolute top-1 right-1 z-10 rounded-full border p-1 opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
                   >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <svg
+                      className="h-3 w-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2.5"
+                        d="M6 18L18 6M6 6l12 12"
+                      ></path>
+                    </svg>
                   </button>
-                  <div className="flex-1 flex items-center justify-center w-full bg-primary/10">
-                    <FileText className="h-8 w-8 text-primary" />
+                  <div className="bg-primary/10 flex w-full flex-1 items-center justify-center">
+                    <FileText className="text-primary h-8 w-8" />
                   </div>
-                  <div className="w-full px-2 py-1.5 bg-card border-t border-border text-center">
-                    <p className="text-[11px] font-medium text-foreground/90 truncate" title={doc.fileName}>
+                  <div className="bg-card border-border w-full border-t px-2 py-1.5 text-center">
+                    <p
+                      className="text-foreground/90 truncate text-[11px] font-medium"
+                      title={doc.fileName}
+                    >
                       {doc.fileName}
                     </p>
                   </div>
@@ -76,38 +102,76 @@ export function DocumentUpload({
 
               {/* New Files */}
               {files.map((file, index) => (
-                <div key={`new-${index}`} className="relative group flex flex-col items-center justify-center w-28 h-28 border border-border rounded-xl bg-card shadow-sm overflow-hidden hover:border-primary transition-all">
+                <div
+                  key={`new-${index}`}
+                  className="group border-border bg-card hover:border-primary relative flex h-28 w-28 flex-col items-center justify-center overflow-hidden rounded-xl border shadow-sm transition-all"
+                >
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       removeFile(index);
                     }}
-                    className="absolute top-1 right-1 bg-card shadow-sm border text-destructive hover:bg-destructive/10 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    className="bg-card text-destructive hover:bg-destructive/10 absolute top-1 right-1 z-10 rounded-full border p-1 opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
                   >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <svg
+                      className="h-3 w-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2.5"
+                        d="M6 18L18 6M6 6l12 12"
+                      ></path>
+                    </svg>
                   </button>
-                  <div className="flex-1 flex items-center justify-center w-full bg-muted/30 group-hover:bg-primary/5 transition-colors">
-                    <svg className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                  <div className="bg-muted/30 group-hover:bg-primary/5 flex w-full flex-1 items-center justify-center transition-colors">
+                    <svg
+                      className="text-muted-foreground group-hover:text-primary h-8 w-8 transition-colors"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.5"
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                      ></path>
+                    </svg>
                   </div>
-                  <div className="w-full px-2 py-1.5 bg-card border-t border-border text-center">
-                    <p className="text-[11px] font-medium text-foreground/90 truncate" title={file.name}>
+                  <div className="bg-card border-border w-full border-t px-2 py-1.5 text-center">
+                    <p
+                      className="text-foreground/90 truncate text-[11px] font-medium"
+                      title={file.name}
+                    >
                       {file.name}
                     </p>
                   </div>
                 </div>
               ))}
-              <div 
-                className="flex flex-col items-center justify-center w-28 h-28 border-2 border-dashed border-border rounded-xl bg-muted/30 hover:bg-muted/50 hover:border-primary cursor-pointer transition-colors"
+              <div
+                className="border-border bg-muted/30 hover:bg-muted/50 hover:border-primary flex h-28 w-28 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors"
                 onClick={() => document.getElementById('fileInput')?.click()}
               >
-                <Upload className="h-5 w-5 text-muted-foreground mb-1" />
-                <span className="text-[11px] font-medium text-muted-foreground">Add More</span>
+                <Upload className="text-muted-foreground mb-1 h-5 w-5" />
+                <span className="text-muted-foreground text-[11px] font-medium">
+                  Add More
+                </span>
               </div>
             </div>
           </div>
         )}
-        <input id="fileInput" type="file" multiple className="hidden" onChange={handleFileChange} />
+        <input
+          id="fileInput"
+          type="file"
+          multiple
+          className="hidden"
+          onChange={handleFileChange}
+        />
       </div>
     </div>
   );

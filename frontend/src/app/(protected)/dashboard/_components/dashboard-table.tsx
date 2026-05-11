@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Application, Role } from '@/types';
+import { Role, Application } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useDashboardColumns } from './table-columns';
@@ -20,7 +20,7 @@ interface DashboardTableProps {
   isLoading: boolean;
   onAssign?: (id: string) => void;
   onApprove?: (id: string, notes?: string) => void;
-  
+
   // Pagination & Filtering Props
   currentPage: number;
   totalPages: number;
@@ -28,18 +28,18 @@ interface DashboardTableProps {
   pageSize: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
-  
+
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  
+
   activeFilters: Record<string, string>;
   onFilterChange: (key: string, value: string) => void;
   onClearFilters: () => void;
 }
 
-export function DashboardTable({ 
-  applications, 
-  userRole, 
+export function DashboardTable({
+  applications,
+  userRole,
   isLoading,
   onAssign,
   onApprove,
@@ -54,7 +54,9 @@ export function DashboardTable({
   onClearFilters,
 }: DashboardTableProps) {
   const router = useRouter();
-  const [approveDialogApp, setApproveDialogApp] = useState<Application | null>(null);
+  const [approveDialogApp, setApproveDialogApp] = useState<Application | null>(
+    null,
+  );
   const [approveNotes, setApproveNotes] = useState('');
 
   const navigateToApplication = (refNumber: string) => {
@@ -77,11 +79,9 @@ export function DashboardTable({
         columns={columns}
         onRowClick={(app) => navigateToApplication(app.refNumber)}
         isLoading={isLoading}
-        
         activeFilters={activeFilters}
         onFilterChange={onFilterChange}
         onClear={onClearFilters}
-        
         // Pagination props
         currentPage={currentPage}
         totalPages={totalPages}
@@ -91,16 +91,23 @@ export function DashboardTable({
         onPageSizeChange={onPageSizeChange}
       />
 
-      <Dialog open={!!approveDialogApp} onOpenChange={(open) => !open && setApproveDialogApp(null)}>
+      <Dialog
+        open={!!approveDialogApp}
+        onOpenChange={(open) => !open && setApproveDialogApp(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Approve Application</DialogTitle>
             <DialogDescription>
-              You are about to approve application <span className="font-semibold text-foreground">{approveDialogApp?.refNumber}</span>. You can optionally add notes below.
+              You are about to approve application{' '}
+              <span className="text-foreground font-semibold">
+                {approveDialogApp?.refNumber}
+              </span>
+              . You can optionally add notes below.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Textarea 
+            <Textarea
               placeholder="Add approval notes (optional)..."
               value={approveNotes}
               onChange={(e) => setApproveNotes(e.target.value)}
@@ -108,9 +115,11 @@ export function DashboardTable({
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setApproveDialogApp(null)}>Cancel</Button>
-            <Button 
-              className="bg-green-600 hover:bg-green-700 text-white"
+            <Button variant="outline" onClick={() => setApproveDialogApp(null)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-green-600 text-white hover:bg-green-700"
               onClick={() => {
                 if (approveDialogApp && onApprove) {
                   onApprove(approveDialogApp.id, approveNotes);
@@ -126,4 +135,3 @@ export function DashboardTable({
     </>
   );
 }
-

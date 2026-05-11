@@ -11,7 +11,11 @@ export class SeedService implements OnApplicationBootstrap {
   constructor(private prisma: PrismaService) {}
 
   async onApplicationBootstrap() {
-    if (process.env.NODE_ENV === 'development') {
+    const adminExists = await this.prisma.user.count({
+      where: { role: Role.ADMIN },
+    });
+
+    if (process.env.NODE_ENV === 'development' || adminExists === 0) {
       await this.seed();
     }
   }
@@ -49,6 +53,21 @@ export class SeedService implements OnApplicationBootstrap {
       const reviewer = userMap[appData.reviewerEmail];
 
       await this.prisma.$transaction(async (tx) => {
+        // Create or find institution
+        let institution = await tx.institution.findFirst({
+          where: { tinNumber: appData.registrationNumber },
+        });
+
+        if (!institution) {
+          institution = await tx.institution.create({
+            data: {
+              name: appData.institutionName,
+              tinNumber: appData.registrationNumber,
+              type: appData.institutionType,
+            },
+          });
+        }
+
         const app = await tx.application.create({
           data: {
             refNumber: appData.refNumber,
@@ -56,9 +75,7 @@ export class SeedService implements OnApplicationBootstrap {
             version: 1,
             applicantId: applicant.id,
             reviewerId: reviewer.id,
-            institutionName: appData.institutionName,
-            institutionType: appData.institutionType,
-            registrationNumber: appData.registrationNumber,
+            institutionId: institution.id,
             proposedCapital: appData.proposedCapital,
             applicantNotes: appData.applicantNotes,
             reviewerNotes: appData.reviewerNotes ?? null,

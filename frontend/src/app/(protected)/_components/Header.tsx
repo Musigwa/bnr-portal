@@ -24,55 +24,70 @@ export function Header() {
   if (!user) return null;
 
   const hasMultipleRoots = user.role === Role.ADMIN;
-  const rootHref = user.role === Role.APPLICANT ? '/applications' : '/dashboard';
-  const rootLabel = user.role === Role.APPLICANT ? 'My Applications' : 'Dashboard';
+  const rootHref =
+    user.role === Role.APPLICANT ? '/applications' : '/dashboard';
+  const rootLabel =
+    user.role === Role.APPLICANT ? 'My Applications' : 'Dashboard';
   const isRoot = pathname === rootHref || pathname === '/users';
 
   const adminNavItems = [
     { href: '/dashboard', label: 'Dashboard' },
-    { href: '/users', label: 'Users' }
+    { href: '/users', label: 'Users' },
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-card backdrop-blur-xl">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+    <header className="bg-card sticky top-0 z-50 w-full border-b backdrop-blur-xl">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center space-x-2">
-          <Link href={rootHref} className="text-xl font-bold text-primary tracking-tight mr-4">BNR Portal</Link>
-          
+          <Link
+            href={rootHref}
+            className="text-primary mr-4 text-xl font-bold tracking-tight"
+          >
+            BNR Portal
+          </Link>
+
           {/* Breadcrumbs for single-root roles (Applicant, Reviewer, Approver) */}
           {!hasMultipleRoots && !isRoot && (
-            <div className="hidden md:flex items-center space-x-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground hidden items-center space-x-2 text-sm md:flex">
               <ChevronRight className="h-4 w-4" />
-              <Link href={rootHref} className="hover:text-foreground transition-colors">
+              <Link
+                href={rootHref}
+                className="hover:text-foreground transition-colors"
+              >
                 {rootLabel}
               </Link>
               {pathname.includes('/new') && (
                 <>
                   <ChevronRight className="h-4 w-4" />
-                  <span className="text-foreground font-medium">New Application</span>
-                </>
-              )}
-              {pathname.match(/\/applications\/[a-zA-Z0-9-]+/) && !pathname.includes('/new') && (
-                <>
-                  <ChevronRight className="h-4 w-4" />
-                  <span className="text-foreground font-medium capitalize">
-                    {pathname.endsWith('/edit') ? 'Edit Application' : pathname.split('/').pop()}
+                  <span className="text-foreground font-medium">
+                    New Application
                   </span>
                 </>
               )}
+              {pathname.match(/\/applications\/[a-zA-Z0-9-]+/) &&
+                !pathname.includes('/new') && (
+                  <>
+                    <ChevronRight className="h-4 w-4" />
+                    <span className="text-foreground font-medium capitalize">
+                      {pathname.endsWith('/edit')
+                        ? 'Edit Application'
+                        : pathname.split('/').pop()}
+                    </span>
+                  </>
+                )}
             </div>
           )}
 
           {/* Navigation tabs for multi-root roles (Admin) */}
           {hasMultipleRoots && (
-            <nav className="hidden md:flex space-x-1 ml-4 border-l pl-4">
+            <nav className="ml-4 hidden space-x-1 border-l pl-4 md:flex">
               {adminNavItems.map((item) => {
                 const isActive = pathname.startsWith(item.href);
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`px-3 py-2 rounded-md text-sm transition-colors ${
+                    className={`rounded-md px-3 py-2 text-sm transition-colors ${
                       isActive
                         ? 'bg-muted text-foreground font-medium'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -88,10 +103,15 @@ export function Header() {
         <div className="flex items-center space-x-2">
           <ThemeToggle />
           <DropdownMenu modal={false}>
-            <DropdownMenuTrigger className="flex items-center justify-center rounded-full cursor-pointer outline-none hover:ring-2 hover:ring-border hover:ring-offset-2 transition-all">
+            <DropdownMenuTrigger className="hover:ring-border flex cursor-pointer items-center justify-center rounded-full transition-all outline-none hover:ring-2 hover:ring-offset-2">
               <Avatar className="h-10 w-10">
                 <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                  {user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                  {user.fullName
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .substring(0, 2)
+                    .toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
@@ -99,18 +119,23 @@ export function Header() {
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.fullName}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
+                    <p className="text-sm leading-none font-medium">
+                      {user.fullName}
+                    </p>
+                    <p className="text-muted-foreground text-xs leading-none">
                       {user.email}
                     </p>
-                    <p className="text-xs mt-1 font-medium text-primary">
+                    <p className="text-primary mt-1 text-xs font-medium">
                       {user.role}
                     </p>
                   </div>
                 </DropdownMenuLabel>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="text-destructive cursor-pointer focus:bg-destructive/10 focus:text-destructive">
+              <DropdownMenuItem
+                onClick={logout}
+                className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>

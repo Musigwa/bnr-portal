@@ -21,12 +21,32 @@ jobs:
       - name: Generate .env file
         env:
           SECRETS_JSON: ${{ toJSON(secrets) }}
-          TARGET_ENV: production
-          APP_NAME: ${{ inputs.project_name }}
         run: |
-          chmod +x .github/scripts/generate-env.sh
-          ./.github/scripts/generate-env.sh
-          chmod 644 .env.production
+          # Exclude infrastructure-only secret prefixes (VPS_*, GITHUB_*) and any
+          # key that isn't a valid POSIX uppercase variable name. This is the same
+          # battle-tested pattern used across our other projects. VPS_* secrets are
+          # repo-level SSH/host credentials; GITHUB_* are runner-injected tokens —
+          # neither belong in the application env file.
+          # Smart quoting: numerics/booleans unquoted, strings double-quoted so
+          # Docker Compose parses special characters in passwords correctly.
+          echo "$SECRETS_JSON" | jq -r '
+            to_entries | .[] |
+            select(
+              (.key | test("^[A-Z][A-Z0-9_]*$")) and
+              (.key | test("^(VPS_|GITHUB_)") | not)
+            ) |
+            if (.value | test("^([0-9]+|true|false)$")) then
+              "\(.key)=\(.value)"
+            else
+              "\(.key)=\"\(.value)\""
+            end
+          ' > .env
+          echo "NODE_ENV=production" >> .env
+          # Derive NEXT_PUBLIC_API_URL from DOMAIN_ROOT — single source of truth for domain config
+          APP_NAME="${{ github.event.repository.name }}"
+          DOMAIN_ROOT=$(echo "$SECRETS_JSON" | jq -r '.DOMAIN_ROOT')
+          echo "NEXT_PUBLIC_API_URL=\"https://api.${APP_NAME}.${DOMAIN_ROOT}\"" >> .env
+          chmod 644 .env
 
       - name: Copy deploy script to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -35,7 +55,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: ".github/scripts/deploy.sh,docker.compose.yml,.env.production"
+          source: ".github/scripts/deploy-blue-green.sh,.github/scripts/utils.sh,docker-compose.yml,.env"
           target: "/opt/deploy/${{ inputs.project_name }}"
           strip_components: 0
 
@@ -49,5 +69,5 @@ jobs:
           script: |
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             cd /opt/deploy/${{ inputs.project_name }}
-            chmod +x .github/scripts/deploy.sh
-            ./.github/scripts/deploy.sh ${{ inputs.service_name }} ${{ github.sha }} ${{ github.event.repository.name }}
+            chmod +x .github/scripts/deploy-blue-green.sh .github/scripts/utils.sh
+            ./.github/scripts/deploy-blue-green.sh ${{ inputs.service_name }} ${{ github.sha }} ${{ github.event.repository.name }}

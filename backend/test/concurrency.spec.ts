@@ -2,7 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ApplicationsService } from '@/domains/applications/applications.service';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
 import { AuditService } from '@/domains/audit/audit.service';
-import { Application, ApplicationStatus, Role, User } from '@prisma/client';
+import {
+  Application,
+  ApplicationStatus,
+  Prisma,
+  Role,
+  User,
+} from '@prisma/client';
 import { ConflictException, Logger } from '@nestjs/common';
 
 const mockApprover = (id: string) => ({
@@ -37,38 +43,42 @@ describe('Concurrency — simultaneous approval', () => {
     let approved = false;
 
     const mockPrisma = {
-      $transaction: jest.fn(async (fn: (tx: any) => Promise<Application>) => {
-        transactionCallCount++;
-        const currentVersion = approved ? 2 : 1;
+      $transaction: jest.fn(
+        async (fn: (tx: Prisma.TransactionClient) => Promise<Application>) => {
+          transactionCallCount++;
+          const currentVersion = approved ? 2 : 1;
 
-        const mockTx = {
-          $queryRaw: jest.fn().mockResolvedValue([
-            {
-              id: applicationId,
-              status: ApplicationStatus.REVIEWED,
-              reviewerId,
-              version: currentVersion,
-            },
-          ]),
-          application: {
-            update: jest.fn(({ where: _where }: any) => {
-              // Simulate version check — if already approved, version won't match
-              if (approved) return Promise.resolve(null);
-              approved = true;
-              return Promise.resolve({
+          const mockTx = {
+            $queryRaw: jest.fn().mockResolvedValue([
+              {
                 id: applicationId,
-                status: ApplicationStatus.APPROVED,
-                version: 2,
-              });
-            }),
-          },
-          auditLog: {
-            create: jest.fn().mockResolvedValue({}),
-          },
-        };
+                status: ApplicationStatus.REVIEWED,
+                reviewerId,
+                version: currentVersion,
+              },
+            ]),
+            application: {
+              update: jest.fn(
+                ({ where: _where }: Prisma.ApplicationUpdateArgs) => {
+                  // Simulate version check — if already approved, version won't match
+                  if (approved) return Promise.resolve(null);
+                  approved = true;
+                  return Promise.resolve({
+                    id: applicationId,
+                    status: ApplicationStatus.APPROVED,
+                    version: 2,
+                  });
+                },
+              ),
+            },
+            auditLog: {
+              create: jest.fn().mockResolvedValue({}),
+            },
+          };
 
-        return fn(mockTx);
-      }),
+          return fn(mockTx as unknown as Prisma.TransactionClient);
+        },
+      ),
       $extends: jest
         .fn()
         .mockReturnValue({ application: { create: jest.fn() } }),

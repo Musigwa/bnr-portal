@@ -1,6 +1,13 @@
 import { AuditLog, ApplicationStatus } from '@/types';
 import { StatusBadge } from '@/components/shared/status-badge';
-import { CheckCircle2, Circle, Clock, FileEdit, ShieldCheck, User } from 'lucide-react';
+import {
+  CheckCircle2,
+  Circle,
+  Clock,
+  FileEdit,
+  ShieldCheck,
+  User,
+} from 'lucide-react';
 
 interface AuditTimelineProps {
   logs: AuditLog[];
@@ -9,8 +16,10 @@ interface AuditTimelineProps {
 export function AuditTimeline({ logs }: AuditTimelineProps) {
   if (!logs || logs.length === 0) {
     return (
-      <div className="py-8 text-center bg-muted/20 rounded-xl border border-dashed border-border">
-        <p className="text-sm text-muted-foreground font-medium">No audit logs available for this application.</p>
+      <div className="bg-muted/20 border-border rounded-xl border border-dashed py-8 text-center">
+        <p className="text-muted-foreground text-sm font-medium">
+          No audit logs available for this application.
+        </p>
       </div>
     );
   }
@@ -28,43 +37,58 @@ export function AuditTimeline({ logs }: AuditTimelineProps) {
       case ApplicationStatus.REJECTED:
         return <Circle className="h-5 w-5 text-red-500" fill="currentColor" />;
       default:
-        return <User className="h-5 w-5 text-muted-foreground/50" />;
+        return <User className="text-muted-foreground/50 h-5 w-5" />;
     }
   };
 
   const formatAction = (action: string) => {
-    return action.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ');
+    return action
+      .split('_')
+      .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(' ');
   };
 
   return (
-    <div className="relative border-l border-border ml-3 space-y-8 py-2 pb-8">
+    <div className="border-border relative ml-3 space-y-8 border-l py-2 pb-8">
       {logs.map((log) => (
         <div key={log.id} className="relative pl-6">
           {/* Timeline Dot/Icon */}
-          <div className="absolute -left-[10px] top-1 bg-card p-0.5 rounded-full z-10">
+          <div className="bg-card absolute top-1 -left-[10px] z-10 rounded-full p-0.5">
             {getIcon(log.statusAfter)}
           </div>
-          
+
           <div className="flex flex-col space-y-1.5">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-bold text-foreground tracking-tight">
+              <span className="text-foreground text-sm font-bold tracking-tight">
                 {formatAction(log.action)}
               </span>
-              <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
-                {new Intl.DateTimeFormat('en-US', { 
-                  day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
+              <span className="text-muted-foreground/60 text-[10px] font-bold tracking-wider uppercase">
+                {new Intl.DateTimeFormat('en-US', {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
                 }).format(new Date(log.createdAt))}
               </span>
             </div>
-            
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="font-medium">By <span className="text-foreground/90 font-bold">{log.actor?.fullName || 'System'}</span></span>
-              <span className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-bold text-muted-foreground">{log.actor?.role || 'SYSTEM'}</span>
+
+            <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
+              <span className="font-medium">
+                By{' '}
+                <span className="text-foreground/90 font-bold">
+                  {log.actor?.fullName || 'System'}
+                </span>
+              </span>
+              <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px] font-bold">
+                {log.actor?.role || 'SYSTEM'}
+              </span>
             </div>
-            
+
             {log.statusAfter && log.statusBefore !== log.statusAfter && (
-              <div className="flex items-center space-x-2 mt-1">
-                <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-tight">Status:</span>
+              <div className="mt-1 flex items-center space-x-2">
+                <span className="text-muted-foreground/60 text-[10px] font-bold tracking-tight uppercase">
+                  Status:
+                </span>
                 <StatusBadge status={log.statusAfter} />
               </div>
             )}
@@ -74,18 +98,23 @@ export function AuditTimeline({ logs }: AuditTimelineProps) {
                 {Object.entries(log.metadata).map(([key, value]) => {
                   let label = key
                     .replace(/([A-Z])/g, ' $1')
-                    .replace(/^./, str => str.toUpperCase())
+                    .replace(/^./, (str) => str.toUpperCase())
                     .trim();
-                  
+
                   if (label.toLowerCase() === 'notes') {
                     const rolePrefix = log.actor?.role || 'Applicant';
                     label = `${rolePrefix} Notes`;
                   }
-                  
+
                   return (
-                    <div key={key} className="bg-muted/30 p-2.5 rounded-lg border border-border/50 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
-                      <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-tight mb-1">{label}</p>
-                      <p className="text-[11px] font-medium text-foreground/80 leading-relaxed">
+                    <div
+                      key={key}
+                      className="bg-muted/30 border-border/50 rounded-lg border p-2.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                    >
+                      <p className="text-muted-foreground/60 mb-1 text-[10px] font-bold tracking-tight uppercase">
+                        {label}
+                      </p>
+                      <p className="text-foreground/80 text-[11px] leading-relaxed font-medium">
                         {String(value)}
                       </p>
                     </div>
@@ -98,15 +127,15 @@ export function AuditTimeline({ logs }: AuditTimelineProps) {
       ))}
 
       {/* End of history marker */}
-      <div className="relative pl-6 pt-2">
-        <div className="absolute -left-[10px] top-3 bg-card p-0.5 rounded-full z-10">
-          <ShieldCheck className="h-4 w-4 text-muted-foreground/40" />
+      <div className="relative pt-2 pl-6">
+        <div className="bg-card absolute top-3 -left-[10px] z-10 rounded-full p-0.5">
+          <ShieldCheck className="text-muted-foreground/40 h-4 w-4" />
         </div>
         <div className="flex flex-col">
-          <p className="text-[14px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+          <p className="text-muted-foreground/60 text-[14px] font-bold tracking-widest uppercase">
             End of Timeline
           </p>
-          <p className="text-[12px] font-medium text-muted-foreground/40 italic">
+          <p className="text-muted-foreground/40 text-[12px] font-medium italic">
             All activity recorded up to now
           </p>
         </div>

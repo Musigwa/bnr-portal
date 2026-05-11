@@ -21,28 +21,9 @@ This is the backend REST API for the Bank Licensing & Compliance Portal, built w
 
 **Single Source of Truth:** The project is configured to use environment variables from the monorepo root. You do **not** need to create a `.env` file in this directory.
 
-Instead, ensure you have a `.env.development` file in the **root directory** of the repository:
+Please refer to the **root `README.md`** for instructions on how to generate the required environment variables using the interactive `pnpm env:generate` wizard.
 
-```env
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_USERNAME=bnr
-DB_PASSWORD=bnr_secret
-DB_NAME=bnr_portal
-JWT_SECRET=change_in_production
-JWT_REFRESH_SECRET=change_in_production
-PORT=3001
-NODE_ENV=development
-
-# MinIO Storage Configuration
-MINIO_ENDPOINT=localhost
-MINIO_PORT=9000
-MINIO_ACCESS_KEY=bnr_admin
-MINIO_SECRET_KEY=bnr_secret_key
-MINIO_BUCKET_NAME=bnr-bucket
-```
-
-*(Note: Use `127.0.0.1` instead of `localhost` on Mac to avoid connection issues).*
+_(Note: Use `127.0.0.1` instead of `localhost` on Mac to avoid connection issues)._
 
 ### Run Locally (Native)
 
@@ -54,10 +35,29 @@ pnpm install
 pnpm dev
 ```
 
-*This uses Turborepo to seamlessly orchestrate the environment.*
+_This uses Turborepo to seamlessly orchestrate the environment._
 
 The API will be available at `http://localhost:3001`.
 Swagger documentation will be available at `http://localhost:3001/docs`.
+
+### Testing Production Binaries Locally
+
+The easiest way to test the compiled production binary locally is to run the unified start command from the **workspace root**. This will automatically boot your Docker infrastructure, inject the environment, and run the binary safely:
+
+```bash
+cd ..
+pnpm build
+pnpm start
+```
+
+**Advanced (Isolated Testing):**
+If you need to strictly test this specific package's raw binary in complete isolation (without the root orchestrator), **do not run `pnpm start` directly.** The script is designed exclusively for the production Docker container and relies entirely on OS-level environment variables.
+
+To test it natively, explicitly source your `.env.development` variables into your shell first:
+
+```bash
+env $(grep -v '^#' ../.env.development | xargs) pnpm start
+```
 
 ### 3. Database Setup:
 
@@ -73,24 +73,18 @@ pnpm --filter @bnr-portal/backend prisma migrate dev
 
 ## Seed Data
 
-The database seeds automatically on first startup in development if no Admin user exists.
+The database seeds automatically on **first startup in all environments** (Development and Production) if no Admin user exists.
 
-Alternatively, you can call the seed endpoint publicly if the database is empty, or as ADMIN if users exist:
+When you deploy the application to a fresh production environment, the backend will automatically detect the empty database and create the initial Admin user and some sample data.
 
-```bash
-POST /database/seed
-# No auth header needed if database has no Admin users!
-# Authorization: Bearer <admin_token> (Required if database already has an Admin)
-```
+### Seed Credentials
 
-### Seed Credentials (Dev)
-
-| Role      | Email              | Password         |
-| --------- | ------------------ | ---------------- |
-| ADMIN     | admin@bnr.rw       | Admin@Portal2026 |
-| APPLICANT | alice.uwera@kcb.rw | KCB@Portal2026   |
-| REVIEWER  | jp.habimana@bnr.rw | BNR@Portal2026   |
-| APPROVER  | mc.mutoni@bnr.rw   | BNR@Portal2026   |
+| Role      | Email                 | Password         |
+| --------- | --------------------- | ---------------- |
+| ADMIN     | admin@bnr.rw          | Admin@Portal2026 |
+| APPLICANT | applicant@testbank.rw | Password@2026    |
+| REVIEWER  | reviewer@bnr.rw       | Password@2026    |
+| APPROVER  | approver@bnr.rw       | Password@2026    |
 
 ## Running Tests
 

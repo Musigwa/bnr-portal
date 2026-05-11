@@ -1,0 +1,7 @@
+services: {} # Required for valid compose syntax
+
+networks:
+  default:
+    external: false
+  observability-network:
+    external: false

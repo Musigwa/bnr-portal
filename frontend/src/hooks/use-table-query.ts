@@ -19,8 +19,13 @@ export function useTableQuery() {
     };
 
     // enums uppercase, free-text keep casing
-    const freeTextFields = ['refNumber', 'institutionName', 'startDate', 'endDate'];
-    Object.keys(params).forEach(key => {
+    const freeTextFields = [
+      'refNumber',
+      'institutionName',
+      'startDate',
+      'endDate',
+    ];
+    Object.keys(params).forEach((key) => {
       if (key === 'page' || key === 'limit') return; // already set as numbers above
       if (freeTextFields.includes(key)) {
         queryParams[key] = params[key]; // preserve as-is
@@ -35,22 +40,37 @@ export function useTableQuery() {
   const setQuery = useCallback(
     (newParams: Record<string, string | number | boolean | undefined>) => {
       const current = new URLSearchParams(Array.from(searchParams.entries()));
-      
+
       const defaults: Record<string, string> = {
         page: '1',
         limit: '10',
       };
 
       Object.entries(newParams).forEach(([key, value]) => {
-        let stringValue = value !== undefined && value !== null ? String(value) : '';
-        
+        let stringValue =
+          value !== undefined && value !== null ? String(value) : '';
+
         // lowercase enums for url
-        const freeTextFields = ['refNumber', 'institutionName', 'startDate', 'endDate'];
-        if (!freeTextFields.includes(key) && key !== 'page' && key !== 'limit' && typeof value === 'string') {
+        const freeTextFields = [
+          'refNumber',
+          'institutionName',
+          'startDate',
+          'endDate',
+        ];
+        if (
+          !freeTextFields.includes(key) &&
+          key !== 'page' &&
+          key !== 'limit' &&
+          typeof value === 'string'
+        ) {
           stringValue = stringValue.toLowerCase();
         }
-        
-        if (!stringValue || stringValue === defaults[key] || stringValue === 'all') {
+
+        if (
+          !stringValue ||
+          stringValue === defaults[key] ||
+          stringValue === 'all'
+        ) {
           current.delete(key);
         } else {
           current.set(key, stringValue);
@@ -58,7 +78,8 @@ export function useTableQuery() {
       });
 
       // reset page on filter change
-      const isPageChangeOnly = Object.keys(newParams).length === 1 && 'page' in newParams;
+      const isPageChangeOnly =
+        Object.keys(newParams).length === 1 && 'page' in newParams;
       if (!isPageChangeOnly && newParams.page === undefined) {
         current.delete('page');
       }
@@ -67,7 +88,7 @@ export function useTableQuery() {
       const query = search ? `?${search}` : '';
       router.push(`${pathname}${query}`, { scroll: false });
     },
-    [router, pathname, searchParams]
+    [router, pathname, searchParams],
   );
 
   return { query, setQuery };

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   AlertDialog,
@@ -47,7 +47,9 @@ export function ConfirmDialog({
               onConfirm();
               onOpenChange(false);
             }}
-            className={variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : ''}
+            className={
+              variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : ''
+            }
           >
             {confirmText}
           </AlertDialogAction>

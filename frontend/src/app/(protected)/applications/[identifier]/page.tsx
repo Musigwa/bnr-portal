@@ -13,7 +13,10 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
-import { useGetApplicationAudit, useGetApplicationById } from '@/hooks/api/use-applications';
+import {
+  useGetApplicationAudit,
+  useGetApplicationById,
+} from '@/hooks/api/use-applications';
 
 // Extracted Sub-Components
 import { ApplicationHeader } from './_components/application-header';
@@ -24,7 +27,7 @@ import { ApplicationSidebar } from './_components/application-sidebar';
 export default function ApplicationDetailsPage() {
   const { identifier } = useParams() as { identifier: string };
   const { user } = useAuth();
-  
+
   const [actionDialog, setActionDialog] = useState<{
     open: boolean;
     title: string;
@@ -35,28 +38,38 @@ export default function ApplicationDetailsPage() {
     requireNote?: boolean;
     noteLabel?: string;
     notePlaceholder?: string;
-  }>({ 
-    open: false, 
-    title: '', 
-    description: '', 
+  }>({
+    open: false,
+    title: '',
+    description: '',
     confirmAction: async () => {},
   });
 
-  const { data: app, isLoading: appLoading, isError } = useGetApplicationById(identifier);
+  const {
+    data: app,
+    isLoading: appLoading,
+    isError,
+  } = useGetApplicationById(identifier);
   const { data: auditLogs } = useGetApplicationAudit(identifier);
 
-  const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+  const [downloadProgress, setDownloadProgress] = useState<
+    Record<string, number>
+  >({});
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
-  const handleDownloadDocument = async (documentId: string, fileName: string) => {
+  const handleDownloadDocument = async (
+    documentId: string,
+    fileName: string,
+  ) => {
     try {
-      setDownloadProgress(prev => ({ ...prev, [documentId]: 0 }));
-      
+      setDownloadProgress((prev) => ({ ...prev, [documentId]: 0 }));
+
       const blob = await apiClient.download(
         `/applications/${app?.id}/documents/${documentId}/download`,
-        (progress) => setDownloadProgress(prev => ({ ...prev, [documentId]: progress }))
+        (progress) =>
+          setDownloadProgress((prev) => ({ ...prev, [documentId]: progress })),
       );
-      
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -65,17 +78,19 @@ export default function ApplicationDetailsPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       setTimeout(() => {
-        setDownloadProgress(prev => {
+        setDownloadProgress((prev) => {
           const newState = { ...prev };
           delete newState[documentId];
           return newState;
         });
       }, 1000);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to download document');
-      setDownloadProgress(prev => {
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to download document',
+      );
+      setDownloadProgress((prev) => {
         const newState = { ...prev };
         delete newState[documentId];
         return newState;
@@ -85,27 +100,30 @@ export default function ApplicationDetailsPage() {
 
   const handlePreviewDocument = async (documentId: string) => {
     try {
-      setDownloadProgress(prev => ({ ...prev, [documentId]: 0 }));
-      
+      setDownloadProgress((prev) => ({ ...prev, [documentId]: 0 }));
+
       const blob = await apiClient.download(
         `/applications/${app?.id}/documents/${documentId}/download`,
-        (progress) => setDownloadProgress(prev => ({ ...prev, [documentId]: progress }))
+        (progress) =>
+          setDownloadProgress((prev) => ({ ...prev, [documentId]: progress })),
       );
-      
+
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
-      
+
       // Clean up progress indicator
       setTimeout(() => {
-        setDownloadProgress(prev => {
+        setDownloadProgress((prev) => {
           const newState = { ...prev };
           delete newState[documentId];
           return newState;
         });
       }, 1000);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to preview document');
-      setDownloadProgress(prev => {
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to preview document',
+      );
+      setDownloadProgress((prev) => {
         const newState = { ...prev };
         delete newState[documentId];
         return newState;
@@ -115,13 +133,15 @@ export default function ApplicationDetailsPage() {
 
   const handleDownloadAll = async () => {
     if (!app?.documents || app.documents.length === 0) return;
-    
+
     setIsDownloadingAll(true);
     try {
-      const blob = await apiClient.download(`/applications/${app.id}/documents/download-all`);
-      
+      const blob = await apiClient.download(
+        `/applications/${app.id}/documents/download-all`,
+      );
+
       const fileName = `Application-${app.refNumber}-Documents.zip`;
-      
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -131,7 +151,11 @@ export default function ApplicationDetailsPage() {
       window.URL.revokeObjectURL(url);
       a.remove();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to download documents archive');
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to download documents archive',
+      );
     } finally {
       setIsDownloadingAll(false);
     }
@@ -142,7 +166,7 @@ export default function ApplicationDetailsPage() {
       <div className="space-y-6">
         <Skeleton className="h-10 w-48" />
         <div className="grid gap-6 md:grid-cols-3">
-          <Skeleton className="md:col-span-2 h-96 rounded-xl" />
+          <Skeleton className="h-96 rounded-xl md:col-span-2" />
           <Skeleton className="h-96 rounded-xl" />
         </div>
       </div>
@@ -162,59 +186,71 @@ export default function ApplicationDetailsPage() {
   return (
     <div className="space-y-6 pb-12">
       {/* Header & Actions */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b pb-8">
+      <div className="flex flex-col justify-between gap-6 border-b pb-8 lg:flex-row lg:items-center">
         <ApplicationHeader app={app} />
-        <ApplicationActions 
-          app={app} 
-          userRole={user?.role || Role.APPLICANT} 
+        <ApplicationActions
+          app={app}
+          userRole={user?.role || Role.APPLICANT}
           userId={user?.id}
-          setActionDialog={setActionDialog} 
+          setActionDialog={setActionDialog}
         />
       </div>
 
       <div className="grid gap-6 md:grid-cols-8">
         {/* Main Content */}
-        <div className="md:col-span-5 space-y-6">
-          {app.status === ApplicationStatus.PENDING_INFO && app.reviewerNotes && (
-            <Card className="border-amber-200 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-950/20 overflow-hidden shadow-sm">
-              <CardHeader className="bg-amber-100/50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-900/30 flex flex-row items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                <CardTitle className="text-xl text-amber-900 dark:text-amber-200">Reviewer Feedback</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-foreground/90 leading-relaxed font-medium whitespace-pre-wrap">{app.reviewerNotes}</p>
-                {app.status === ApplicationStatus.PENDING_INFO && (
-                  <p className="mt-4 text-sm text-amber-700 dark:text-amber-300 bg-amber-100/50 dark:bg-amber-950/50 p-3 rounded-lg border border-amber-200/50 dark:border-amber-900/30">
-                    <strong>Action Required: </strong> Please update the application details or upload missing documents, then click &quot;Resubmit Application&quot; above.
+        <div className="space-y-6 md:col-span-5">
+          {app.status === ApplicationStatus.PENDING_INFO &&
+            app.reviewerNotes && (
+              <Card className="overflow-hidden border-amber-200 bg-amber-50/30 shadow-sm dark:border-amber-900/30 dark:bg-amber-950/20">
+                <CardHeader className="flex flex-row items-center gap-2 border-b border-amber-200 bg-amber-100/50 dark:border-amber-900/30 dark:bg-amber-950/40">
+                  <MessageSquare className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  <CardTitle className="text-xl text-amber-900 dark:text-amber-200">
+                    Reviewer Feedback
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-foreground/90 leading-relaxed font-medium whitespace-pre-wrap">
+                    {app.reviewerNotes}
                   </p>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                  {app.status === ApplicationStatus.PENDING_INFO && (
+                    <p className="mt-4 rounded-lg border border-amber-200/50 bg-amber-100/50 p-3 text-sm text-amber-700 dark:border-amber-900/30 dark:bg-amber-950/50 dark:text-amber-300">
+                      <strong>Action Required: </strong> Please update the
+                      application details or upload missing documents, then
+                      click &quot;Resubmit Application&quot; above.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
           <ApplicationDetailsCard app={app} />
 
           <Card className="border-border overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between border-b">
               <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-muted-foreground" />
+                <FileText className="text-muted-foreground h-5 w-5" />
                 <CardTitle className="text-xl">Supporting documents</CardTitle>
                 {app.documents.length > 0 && (
-                  <span className="ml-2 text-xs font-bold px-2 py-0.5 bg-primary/10 text-primary rounded-full border border-primary/20">
-                    {app.documents.length} {app.documents.length === 1 ? 'file' : 'files'}
+                  <span className="bg-primary/10 text-primary border-primary/20 ml-2 rounded-full border px-2 py-0.5 text-xs font-bold">
+                    {app.documents.length}{' '}
+                    {app.documents.length === 1 ? 'file' : 'files'}
                   </span>
                 )}
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="h-9 px-4 font-bold shadow-sm"
                 onClick={handleDownloadAll}
-                disabled={!app.documents || app.documents.length === 0 || isDownloadingAll}
+                disabled={
+                  !app.documents ||
+                  app.documents.length === 0 ||
+                  isDownloadingAll
+                }
               >
                 {isDownloadingAll ? (
                   <>
-                    <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <div className="border-primary mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
                     Downloading...
                   </>
                 ) : (
@@ -225,8 +261,8 @@ export default function ApplicationDetailsPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <DocumentList 
-                documents={app.documents || []} 
+              <DocumentList
+                documents={app.documents || []}
                 onDownload={handleDownloadDocument}
                 onPreview={handlePreviewDocument}
                 downloadProgress={downloadProgress}
@@ -236,17 +272,17 @@ export default function ApplicationDetailsPage() {
         </div>
 
         {/* Sidebar */}
-        <ApplicationSidebar 
-          app={app} 
-          auditLogs={auditLogs || []} 
-          userRole={user?.role || Role.APPLICANT} 
+        <ApplicationSidebar
+          app={app}
+          auditLogs={auditLogs || []}
+          userRole={user?.role || Role.APPLICANT}
         />
       </div>
 
-      <ActionDialog 
-        {...actionDialog} 
-        onOpenChange={(open) => setActionDialog(prev => ({ ...prev, open }))} 
-        onConfirm={actionDialog.confirmAction} 
+      <ActionDialog
+        {...actionDialog}
+        onOpenChange={(open) => setActionDialog((prev) => ({ ...prev, open }))}
+        onConfirm={actionDialog.confirmAction}
       />
     </div>
   );

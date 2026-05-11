@@ -20,32 +20,9 @@ export interface User {
   email: string;
   fullName: string;
   role: Role;
-  createdAt: string;
-}
-
-export interface Application {
-  id: string;
-  refNumber: string;
-  status: ApplicationStatus;
-  version: number;
-  applicantId: string;
-  institutionName: string;
-  institutionType: string;
-  registrationNumber: string;
-  proposedCapital: number;
-  applicantNotes: string | null;
-  reviewerNotes: string | null;
-  rejectionReason: string | null;
-  reviewerId: string | null;
-  approverId: string | null;
-  applicant: Pick<User, 'id' | 'fullName' | 'email'>;
-  reviewer: Pick<User, 'id' | 'fullName' | 'email'> | null;
-  approver: Pick<User, 'id' | 'fullName' | 'email'> | null;
-  documents: Document[];
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  submittedAt: string | null;
-  decidedAt: string | null;
 }
 
 export interface Document {
@@ -54,10 +31,43 @@ export interface Document {
   fileName: string;
   fileSize: number;
   mimeType: string;
+  storagePath: string;
   uploadedById: string;
   version: number;
   isSuperseded: boolean;
+  supersededBy: string | null;
   uploadedAt: string;
+}
+
+export interface Institution {
+  id: string;
+  name: string;
+  type: string;
+  tinNumber: string;
+}
+
+export interface Application {
+  id: string;
+  refNumber: string;
+  institutionName: string;
+  institutionType: string;
+  tinNumber: string;
+  proposedCapital: number;
+  status: ApplicationStatus;
+  applicantId: string;
+  reviewerId: string | null;
+  approverId: string | null;
+  applicantNotes: string | null;
+  reviewerNotes: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  submittedAt: string | null;
+  decidedAt: string | null;
+  applicant: Pick<User, 'id' | 'fullName' | 'email'>;
+  reviewer: Pick<User, 'id' | 'fullName' | 'email'> | null;
+  approver: Pick<User, 'id' | 'fullName' | 'email'> | null;
+  documents: Document[];
 }
 
 export interface DocumentGroup {
@@ -69,12 +79,12 @@ export interface AuditLog {
   id: string;
   applicationId: string;
   actorId: string;
-  actor: Pick<User, 'id' | 'fullName' | 'email' | 'role'>;
   action: string;
   statusBefore: ApplicationStatus | null;
   statusAfter: ApplicationStatus | null;
-  metadata: Record<string, unknown> | null;
   createdAt: string;
+  actor: Pick<User, 'id' | 'fullName' | 'email' | 'role'>;
+  metadata: Record<string, unknown> | null;
 }
 
 export interface ApiError {

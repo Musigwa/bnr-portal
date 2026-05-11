@@ -8,7 +8,7 @@ export class CreateUserDto {
     example: 'example@email.com',
   })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({
     description: 'User password',
@@ -16,14 +16,14 @@ export class CreateUserDto {
   })
   @IsString()
   @MinLength(8)
-  password: string;
+  password!: string;
 
   @ApiProperty({
     description: 'User full name',
     example: 'John Doe',
   })
   @IsString()
-  fullName: string;
+  fullName!: string;
 
   @ApiProperty({
     description: 'User role',
@@ -31,5 +31,5 @@ export class CreateUserDto {
     example: Role.APPLICANT,
   })
   @IsEnum(Role)
-  role: Role;
+  role!: Role;
 }

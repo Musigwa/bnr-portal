@@ -16,12 +16,16 @@ export class StorageService {
   private readonly logger = new Logger(StorageService.name);
 
   constructor(private readonly config: AppConfigService) {
-    this.bucketName = String(this.config.get('storage.bucketName') || '');
+    this.bucketName = String(this.config.get('storage.bucketName'));
 
-    const endpoint = String(this.config.get('storage.endpoint') || '');
-    const port = String(this.config.get('storage.port') || '');
-    const accessKeyId = String(this.config.get('storage.accessKey') || '');
-    const secretAccessKey = String(this.config.get('storage.secretKey') || '');
+    const endpoint = String(this.config.get('storage.endpoint'));
+    const port = String(this.config.get('storage.port'));
+    const accessKeyId = String(this.config.get('storage.accessKey'));
+    const secretAccessKey = String(this.config.get('storage.secretKey'));
+    const region = String(this.config.get('storage.region'));
+    const forcePathStyle = Boolean(
+      this.config.get('storage.forcePathStyle') ?? true,
+    );
 
     // Use http if localhost/minio, or a real https URL if it's external S3
     const endpointUrl = endpoint.startsWith('http')
@@ -30,12 +34,12 @@ export class StorageService {
 
     this.s3Client = new S3Client({
       endpoint: endpointUrl,
-      region: 'us-east-1', // Required by SDK even if ignored by MinIO
+      region, // Dynamically loaded
       credentials: {
         accessKeyId,
         secretAccessKey,
       },
-      forcePathStyle: true, // Crucial for MinIO and compatible S3 clones
+      forcePathStyle, // Dynamically loaded
     });
   }
 

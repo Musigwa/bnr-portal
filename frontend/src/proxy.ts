@@ -10,8 +10,9 @@ export default function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const refreshToken = request.cookies.get('refreshToken')?.value
-    ?? request.headers.get('x-refresh-token');
+  const refreshToken =
+    request.cookies.get('refreshToken')?.value ??
+    request.headers.get('x-refresh-token');
 
   if (!refreshToken) {
     const loginUrl = new URL('/login', request.url);

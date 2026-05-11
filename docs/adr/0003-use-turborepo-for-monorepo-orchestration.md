@@ -1,4 +1,4 @@
-# 3. Use Turborepo for Monorepo Orchestration
+# ADR 0003: Use Turborepo for Monorepo Orchestration
 
 ## Status
 

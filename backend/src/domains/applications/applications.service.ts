@@ -43,10 +43,58 @@ export class ApplicationsService {
   }
 
   async create(user: User, dto: CreateApplicationDto) {
+    // Capitalize institution name (Title Case)
+    const formattedName = dto.institutionName
+      .split(' ')
+      .filter((w) => w.length > 0)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+
+    // Check for existing institution
+    const existingInstitution = await this.prisma.institution.findFirst({
+      where: {
+        OR: [
+          { tinNumber: dto.tinNumber },
+          { name: { equals: formattedName, mode: 'insensitive' } },
+        ],
+      },
+    });
+
+    let institutionId: string;
+
+    if (existingInstitution) {
+      if (
+        existingInstitution.tinNumber !== dto.tinNumber ||
+        existingInstitution.name.toLowerCase() !== formattedName.toLowerCase()
+      ) {
+        throw new ConflictException(
+          'An institution with this TIN or Name already exists but does not exactly match both. Please verify your details.',
+        );
+      }
+      institutionId = existingInstitution.id;
+    } else {
+      const newInstitution = await this.prisma.institution.create({
+        data: {
+          name: formattedName,
+          tinNumber: dto.tinNumber,
+          type: dto.institutionType,
+        },
+      });
+      institutionId = newInstitution.id;
+    }
+
+    const {
+      institutionName: _institutionName,
+      institutionType: _institutionType,
+      tinNumber: _tinNumber,
+      ...appData
+    } = dto;
+
     return (this.extendedPrisma as PrismaClient).application.create({
       data: {
-        ...dto,
+        ...appData,
         applicantId: user.id,
+        institutionId,
       } as unknown as Prisma.ApplicationCreateInput,
     }) as Promise<Application>;
   }
@@ -84,7 +132,9 @@ export class ApplicationsService {
       (where.AND as Prisma.ApplicationWhereInput[]).push({ status });
     }
     if (institutionType) {
-      (where.AND as Prisma.ApplicationWhereInput[]).push({ institutionType });
+      (where.AND as Prisma.ApplicationWhereInput[]).push({
+        institution: { type: institutionType },
+      });
     }
     if (refNumber) {
       (where.AND as Prisma.ApplicationWhereInput[]).push({
@@ -93,7 +143,9 @@ export class ApplicationsService {
     }
     if (institutionName) {
       (where.AND as Prisma.ApplicationWhereInput[]).push({
-        institutionName: { contains: institutionName, mode: 'insensitive' },
+        institution: {
+          name: { contains: institutionName, mode: 'insensitive' },
+        },
       });
     }
     if (startDate || endDate) {
@@ -115,8 +167,8 @@ export class ApplicationsService {
     if (searchQuery) {
       const defaultFields = [
         'refNumber',
-        'institutionName',
-        'registrationNumber',
+        'institution.name',
+        'institution.tinNumber',
       ];
       const fields = searchFields
         ? searchFields.split(',').map((f) => f.trim())
@@ -145,6 +197,7 @@ export class ApplicationsService {
       this.prisma.application.findMany({
         where,
         include: {
+          institution: true,
           applicant: { select: { id: true, fullName: true, email: true } },
           reviewer: { select: { id: true, fullName: true, email: true } },
           approver: { select: { id: true, fullName: true, email: true } },
@@ -158,7 +211,15 @@ export class ApplicationsService {
     ]);
 
     return {
-      data,
+      data: data.map((app) => {
+        const { institution, ...rest } = app;
+        return {
+          ...rest,
+          institutionName: institution?.name,
+          institutionType: institution?.type,
+          tinNumber: institution?.tinNumber,
+        };
+      }),
       meta: {
         total,
         page: Number(page),
@@ -199,7 +260,10 @@ export class ApplicationsService {
       this.extendedPrisma as PrismaClient
     ).application.groupBy({
       by: ['status'],
-      where: (where.AND as any[]).length > 0 ? where : undefined,
+      where:
+        (where.AND as Prisma.ApplicationWhereInput[]).length > 0
+          ? where
+          : undefined,
       _count: {
         _all: true,
       },
@@ -282,6 +346,7 @@ export class ApplicationsService {
     const app = await this.prisma.application.findUnique({
       where: { id },
       include: {
+        institution: true,
         applicant: { select: { id: true, fullName: true, email: true } },
         reviewer: { select: { id: true, fullName: true, email: true } },
         approver: { select: { id: true, fullName: true, email: true } },
@@ -294,7 +359,13 @@ export class ApplicationsService {
       throw new ForbiddenException('Access denied');
     }
 
-    return app;
+    const { institution, ...rest } = app;
+    return {
+      ...rest,
+      institutionName: institution?.name,
+      institutionType: institution?.type,
+      tinNumber: institution?.tinNumber,
+    };
   }
 
   async update(identifier: string, user: User, dto: UpdateApplicationDto) {
@@ -314,7 +385,69 @@ export class ApplicationsService {
       );
     }
 
-    return this.prisma.application.update({ where: { id }, data: dto });
+    const { institutionName, institutionType, tinNumber, ...appData } = dto;
+    let institutionId: string | undefined;
+
+    if (institutionName || tinNumber || institutionType) {
+      // We assume if one is provided, we use the provided ones or fallback to existing
+      // But usually frontend sends all. Let's fetch current to merge.
+      const currentApp = await this.prisma.application.findUnique({
+        where: { id },
+        include: { institution: true },
+      });
+
+      if (!currentApp || !currentApp.institution) {
+        throw new NotFoundException('Application or Institution not found');
+      }
+
+      const mergedName = institutionName || currentApp.institution.name;
+      const mergedTin = tinNumber || currentApp.institution.tinNumber;
+      const mergedType = institutionType || currentApp.institution.type;
+
+      const formattedName = mergedName
+        .split(' ')
+        .filter((w) => w.length > 0)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+
+      const existingInstitution = await this.prisma.institution.findFirst({
+        where: {
+          OR: [
+            { tinNumber: mergedTin },
+            { name: { equals: formattedName, mode: 'insensitive' } },
+          ],
+        },
+      });
+
+      if (existingInstitution) {
+        if (
+          existingInstitution.tinNumber !== mergedTin ||
+          existingInstitution.name.toLowerCase() !== formattedName.toLowerCase()
+        ) {
+          throw new ConflictException(
+            'An institution with this TIN or Name already exists but does not exactly match both. Please verify your details.',
+          );
+        }
+        institutionId = existingInstitution.id;
+      } else {
+        const newInstitution = await this.prisma.institution.create({
+          data: {
+            name: formattedName,
+            tinNumber: mergedTin,
+            type: mergedType,
+          },
+        });
+        institutionId = newInstitution.id;
+      }
+    }
+
+    return this.prisma.application.update({
+      where: { id },
+      data: {
+        ...appData,
+        ...(institutionId ? { institutionId } : {}),
+      },
+    });
   }
 
   async submit(identifier: string, user: User) {

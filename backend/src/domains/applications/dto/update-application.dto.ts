@@ -1,5 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  MinLength,
+  Matches,
+} from 'class-validator';
 
 export class UpdateApplicationDto {
   @ApiPropertyOptional({
@@ -20,12 +26,15 @@ export class UpdateApplicationDto {
   institutionType?: string;
 
   @ApiPropertyOptional({
-    description: 'Registration number',
-    example: '123456',
+    description: '9-digit TIN Number (Rwanda)',
+    example: '123456789',
   })
   @IsString()
+  @Matches(/^\d{9}$/, {
+    message: 'TIN Number must be exactly 9 numeric digits',
+  })
   @IsOptional()
-  registrationNumber?: string;
+  tinNumber?: string;
 
   @ApiPropertyOptional({
     description: 'Proposed capital',

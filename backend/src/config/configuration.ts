@@ -1,7 +1,9 @@
 const configuration = () => ({
   app: {
     env: process.env.NODE_ENV,
-    url: process.env.BACKEND_URL,
+    url: process.env.DOMAIN_ROOT
+      ? `https://api.${process.env.APP_NAME ?? 'bnr-portal'}.${process.env.DOMAIN_ROOT}`
+      : undefined,
     port: parseInt(process.env.BACKEND_PORT!, 10),
   },
   database: {
@@ -12,15 +14,38 @@ const configuration = () => ({
     name: process.env.DB_NAME,
   },
   security: {
+    corsOrigin: process.env.CORS_ORIGIN!,
     jwtSecret: process.env.JWT_SECRET,
     jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
+    jwtAccessExpirationMin: parseInt(
+      process.env.JWT_ACCESS_EXPIRATION_MIN!,
+      10,
+    ),
+    jwtRefreshExpirationDays: parseInt(
+      process.env.JWT_REFRESH_EXPIRATION_DAYS!,
+      10,
+    ),
+  },
+  throttling: {
+    ttlSec: parseInt(process.env.THROTTLE_TTL_SEC!, 10),
+    limitReq: parseInt(process.env.THROTTLE_LIMIT_REQ!, 10),
+    shortTtlSec: parseInt(process.env.THROTTLE_SHORT_TTL_SEC!, 10),
+    shortLimitReq: parseInt(process.env.THROTTLE_SHORT_LIMIT_REQ!, 10),
+    strictTtlSec: parseInt(process.env.THROTTLE_STRICT_TTL_SEC!, 10),
+    strictLimitReq: parseInt(process.env.THROTTLE_STRICT_LIMIT_REQ!, 10),
+  },
+  documents: {
+    maxFileSizeMb: parseInt(process.env.MAX_FILE_SIZE_MB!, 10),
   },
   storage: {
-    endpoint: process.env.MINIO_ENDPOINT,
-    port: parseInt(process.env.MINIO_PORT!, 10),
-    accessKey: process.env.MINIO_ACCESS_KEY,
-    secretKey: process.env.MINIO_SECRET_KEY,
-    bucketName: process.env.MINIO_BUCKET_NAME,
+    endpoint: process.env.S3_ENDPOINT,
+    port: parseInt(process.env.S3_PORT!, 10),
+    accessKey: process.env.S3_ACCESS_KEY,
+    secretKey: process.env.S3_SECRET_KEY,
+    bucketName: process.env.S3_BUCKET_NAME,
+    region: process.env.S3_REGION!,
+    forcePathStyle:
+      String(process.env.S3_FORCE_PATH_STYLE).toLowerCase() === 'true',
   },
 });
 

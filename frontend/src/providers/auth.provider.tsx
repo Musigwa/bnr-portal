@@ -1,15 +1,21 @@
 'use client';
 
 import {
+  apiClient,
+  clearTokens,
+  loadRefreshToken,
+  setTokens,
+} from '@/lib/api-client';
+import type { User, Role } from '@/types';
+import {
   createContext,
-  useContext,
-  useState,
-  useEffect,
   useCallback,
+  useContext,
+  useEffect,
+  useState,
   type ReactNode,
 } from 'react';
-import { User, Role } from '@/types';
-import { apiClient, setTokens, clearTokens, loadRefreshToken } from '@/lib/api-client';
+
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
@@ -34,10 +40,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const tokens = await apiClient.post<{ accessToken: string; refreshToken: string }>(
-      '/auth/login',
-      { email, password },
-    );
+    const tokens = await apiClient.post<{
+      accessToken: string;
+      refreshToken: string;
+    }>('/auth/login', { email, password });
     setTokens(tokens);
     const me = await apiClient.get<User>('/users/me');
     setUser(me);
@@ -46,7 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     const rt = localStorage.getItem('refreshToken');
     if (rt) {
-      await apiClient.post('/auth/logout', { refreshToken: rt }).catch(() => {});
+      await apiClient
+        .post('/auth/logout', { refreshToken: rt })
+        .catch(() => {});
     }
     clearTokens();
     setUser(null);

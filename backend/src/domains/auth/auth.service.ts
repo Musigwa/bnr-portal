@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { AppConfigService } from '@/config/config.service';
 
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
@@ -13,6 +14,7 @@ export class AuthService {
     private prisma: PrismaService,
     private readonly usersService: UsersService,
     private jwt: JwtService,
+    private readonly config: AppConfigService,
   ) {}
 
   async login(dto: LoginDto) {
@@ -37,9 +39,12 @@ export class AuthService {
   private async issueTokens(userId: string, email: string, role: string) {
     const payload = { sub: userId, email, role };
 
+    const accessMin = this.config.get<number>(
+      'security.jwtAccessExpirationMin',
+    );
     const accessToken = this.jwt.sign(payload, {
       secret: process.env.JWT_SECRET,
-      expiresIn: '15m',
+      expiresIn: `${accessMin}m`,
     });
 
     const rawRefreshToken = randomUUID();
@@ -51,7 +56,10 @@ export class AuthService {
         userId,
         tokenHash,
         lookupKey,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(
+          Date.now() +
+            this.config.get<number>('security.jwtRefreshExpirationDays'),
+        ),
       },
     });
 

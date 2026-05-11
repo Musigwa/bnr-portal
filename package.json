@@ -13,25 +13,35 @@
   },
   "homepage": "https://github.com/Musigwa/bnr-portal#readme",
   "scripts": {
-    "services:up": "docker compose -f docker.compose.yml --env-file .env.development up postgres minio minio-setup -d",
-    "services:down": "docker compose -f docker.compose.yml down",
-    "dev": "pnpm services:up && turbo run dev",
-    "build": "turbo run build",
+    "services:up": "docker compose -f docker-compose.yml -f docker-compose.local.yml --profile development up -d",
+    "services:down": "docker compose --profile development down",
+    "services:clean": "docker compose --profile development down -v",
+    "dev": "pnpm services:up && pnpm with-env turbo run dev",
+    "prestart": "pnpm build",
+    "start": "pnpm services:up && pnpm with-env turbo run start",
+    "build": "pnpm with-env turbo run build",
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
-    "postinstall": "pnpm -r postinstall",
     "lint-staged": "lint-staged",
     "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "turbo run format",
+    "format:check": "turbo run format:check",
     "typecheck": "turbo run typecheck",
-    "verify:all": "turbo run lint typecheck test test:e2e build",
+    "with-env": "dotenvx run -f .env --ignore=MISSING_ENV_FILE --",
+    "env:generate": "pnpm --filter @bnr-portal/env generate",
+    "env:validate": "pnpm --filter @bnr-portal/env validate",
+    "verify:all": "turbo run validate:turbo format:check lint typecheck test test:e2e build",
     "prepare": "husky"
   },
   "lint-staged": {
-    "frontend/**/*.{ts,tsx}": [
+    "frontend/**/*.{ts,tsx,js,jsx,mjs,cjs,css}": [
+      "prettier --write",
       "pnpm --filter @bnr-portal/frontend lint",
       "bash -c 'pnpm --filter @bnr-portal/frontend typecheck'"
     ],
-    "backend/**/*.ts": [
+    "backend/**/*.{ts,js,mjs,cjs}": [
+      "prettier --write",
       "pnpm --filter @bnr-portal/backend lint",
       "bash -c 'pnpm --filter @bnr-portal/backend typecheck'"
     ]
@@ -45,11 +55,20 @@
     "nextjs",
     "nestjs"
   ],
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
   "packageManager": "pnpm@10.29.3",
   "devDependencies": {
-    "dotenv-cli": "^11.0.0",
+    "@dotenvx/dotenvx": "^1.73.1",
+    "@types/inquirer": "^8.2.13",
+    "chalk": "^4.1.2",
     "husky": "^9.1.7",
+    "inquirer": "^8.2.7",
+    "joi": "^18.2.1",
     "lint-staged": "^15.4.3",
+    "tsx": "^4.22.4",
     "turbo": "^2.9.18"
   },
   "pnpm": {

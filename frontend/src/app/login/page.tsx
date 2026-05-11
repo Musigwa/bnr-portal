@@ -5,7 +5,13 @@ export const dynamic = 'force-dynamic';
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background px-4">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="bg-background flex min-h-screen items-center justify-center px-4">
+          Loading...
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );

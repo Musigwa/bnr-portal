@@ -36,7 +36,9 @@ export class DocumentsController {
     private storage: StorageService,
   ) {}
 
-  @ApiOperation({ summary: 'Upload document — max 5MB' })
+  @ApiOperation({
+    summary: `Upload document (max ${process.env.MAX_FILE_SIZE_MB}MB)`,
+  })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -52,7 +54,9 @@ export class DocumentsController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
-      limits: { fileSize: 5 * 1024 * 1024 },
+      limits: {
+        fileSize: parseInt(process.env.MAX_FILE_SIZE_MB!, 10) * 1024 * 1024,
+      },
     }),
   )
   upload(

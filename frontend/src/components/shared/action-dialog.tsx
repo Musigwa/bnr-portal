@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import {
@@ -61,14 +61,17 @@ export function ActionDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">{title}</DialogTitle>
-          <DialogDescription className="pt-2 text-muted-foreground">
+          <DialogDescription className="text-muted-foreground pt-2">
             {description}
           </DialogDescription>
         </DialogHeader>
 
         {requireNote && (
           <div className="grid gap-3 py-4">
-            <Label htmlFor="note" className="text-sm font-bold text-foreground uppercase tracking-tight">
+            <Label
+              htmlFor="note"
+              className="text-foreground text-sm font-bold tracking-tight uppercase"
+            >
               {noteLabel} <span className="text-destructive">*</span>
             </Label>
             <Textarea
@@ -76,7 +79,7 @@ export function ActionDialog({
               placeholder={notePlaceholder}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="min-h-[140px] border border-input bg-muted/50 focus:bg-background focus-visible:ring-4 focus-visible:ring-ring/10 transition-all resize-none p-4 text-sm shadow-sm"
+              className="border-input bg-muted/50 focus:bg-background focus-visible:ring-ring/10 min-h-[140px] resize-none border p-4 text-sm shadow-sm transition-all focus-visible:ring-4"
             />
           </div>
         )}
@@ -87,7 +90,7 @@ export function ActionDialog({
             variant="ghost"
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
-            className="font-semibold text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground font-semibold"
           >
             {cancelText}
           </Button>
@@ -95,9 +98,12 @@ export function ActionDialog({
             type="button"
             onClick={handleConfirm}
             disabled={isLoading || (requireNote && !note.trim())}
-            className={`font-bold px-6 shadow-md ${
-              variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : 
-              variant === 'success' ? 'bg-green-600 hover:bg-green-700' : ''
+            className={`px-6 font-bold shadow-md ${
+              variant === 'destructive'
+                ? 'bg-red-600 hover:bg-red-700'
+                : variant === 'success'
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : ''
             }`}
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

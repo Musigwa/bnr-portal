@@ -6,8 +6,8 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import { Public } from 'src/common/decorators/public.decorator';
+import { StrictThrottle } from 'src/common/decorators/strict-throttle.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
@@ -21,7 +21,7 @@ export class AuthController {
   @ApiOkResponse({ description: 'Returns access and refresh tokens' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @Public()
-  @Throttle({ short: { ttl: 60000, limit: 5 } }) // 5 attempts per minute
+  @StrictThrottle()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto) {
@@ -31,7 +31,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiOkResponse({ description: 'Returns new access token' })
   @Public()
-  @Throttle({ short: { ttl: 60000, limit: 10 } })
+  @StrictThrottle()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   refresh(@Body() dto: RefreshDto) {

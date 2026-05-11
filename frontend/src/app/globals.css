@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -51,65 +51,85 @@
 
 @layer base {
   :root {
-    --background: oklch(0.97 0.005 285); /* Clean neutral zinc-gray background */
+    --background: oklch(
+      0.97 0.005 285
+    ); /* Clean neutral zinc-gray background */
     --foreground: oklch(0.14 0.005 285); /* Deep charcoal text */
-    --card: oklch(1 0 0 / 0.25); /* Ultra-translucent pure white glass (25% opacity) */
+    --card: oklch(
+      1 0 0 / 0.25
+    ); /* Ultra-translucent pure white glass (25% opacity) */
     --card-foreground: oklch(0.14 0.005 285);
-    --popover: oklch(1 0 0 / 0.25); /* Ultra-translucent white popover glass (25% opacity) */
+    --popover: oklch(
+      1 0 0 / 0.25
+    ); /* Ultra-translucent white popover glass (25% opacity) */
     --popover-foreground: oklch(0.14 0.005 285);
-    --primary: oklch(0.21 0.006 285); /* Dark obsidian primary buttons/elements */
+    --primary: oklch(
+      0.21 0.006 285
+    ); /* Dark obsidian primary buttons/elements */
     --primary-foreground: oklch(0.98 0.005 285);
     --secondary: oklch(0.92 0.005 285 / 0.5); /* Semi-transparent secondary */
-    --secondary-foreground: oklch(0.20 0.005 285);
+    --secondary-foreground: oklch(0.2 0.005 285);
     --muted: oklch(0.92 0.005 285 / 0.5);
     --muted-foreground: oklch(0.45 0.005 285); /* Muted gray text */
     --accent: oklch(0.92 0.005 285 / 0.5);
-    --accent-foreground: oklch(0.20 0.005 285);
+    --accent-foreground: oklch(0.2 0.005 285);
     --destructive: oklch(0.55 0.22 28);
-    --border: oklch(0 0 0 / 0.08); /* Clean dark-tinted glass border (8% opacity) */
+    --border: oklch(
+      0 0 0 / 0.08
+    ); /* Clean dark-tinted glass border (8% opacity) */
     --input: oklch(0 0 0 / 0.18); /* Defined input border */
     --input-background: oklch(1 0 0 / 0.85); /* White glass input background */
     --ring: oklch(0.21 0.006 285);
     --chart-1: oklch(0.21 0.006 285);
     --chart-2: oklch(0.45 0.005 285);
-    --chart-3: oklch(0.60 0.005 285);
+    --chart-3: oklch(0.6 0.005 285);
     --chart-4: oklch(0.75 0.005 285);
-    --chart-5: oklch(0.90 0.005 285);
+    --chart-5: oklch(0.9 0.005 285);
     --radius: 0.625rem;
     --sidebar: oklch(0.985 0.002 285 / 0.75);
     --sidebar-foreground: oklch(0.14 0.005 285);
     --sidebar-primary: oklch(0.21 0.006 285);
     --sidebar-primary-foreground: oklch(0.98 0.005 285);
     --sidebar-accent: oklch(0.92 0.005 285 / 0.5);
-    --sidebar-accent-foreground: oklch(0.20 0.005 285);
+    --sidebar-accent-foreground: oklch(0.2 0.005 285);
     --sidebar-border: oklch(0 0 0 / 0.08);
     --sidebar-ring: oklch(0.21 0.006 285);
   }
 
   .dark {
-    --background: oklch(0.06 0.005 285); /* Deep premium obsidian/carbon background */
+    --background: oklch(
+      0.06 0.005 285
+    ); /* Deep premium obsidian/carbon background */
     --foreground: oklch(0.98 0.005 285); /* Off-white text */
-    --card: oklch(0.20 0.008 285 / 0.15); /* Ultra-translucent dark glass (15% opacity) */
+    --card: oklch(
+      0.2 0.008 285 / 0.15
+    ); /* Ultra-translucent dark glass (15% opacity) */
     --card-foreground: oklch(0.98 0.005 285);
-    --popover: oklch(0.20 0.008 285 / 0.15); /* Ultra-translucent dark glass popover (15% opacity) */
+    --popover: oklch(
+      0.2 0.008 285 / 0.15
+    ); /* Ultra-translucent dark glass popover (15% opacity) */
     --popover-foreground: oklch(0.98 0.005 285);
     --primary: oklch(0.98 0.005 285); /* Off-white primary text/button */
     --primary-foreground: oklch(0.08 0.005 285);
     --secondary: oklch(0.24 0.01 285 / 0.45); /* Semi-transparent secondary */
     --secondary-foreground: oklch(0.98 0.005 285);
     --muted: oklch(0.22 0.01 285 / 0.45); /* Muted glass */
-    --muted-foreground: oklch(0.70 0.008 285); /* Soft gray text */
+    --muted-foreground: oklch(0.7 0.008 285); /* Soft gray text */
     --accent: oklch(0.24 0.01 285 / 0.45); /* Accent glass */
     --accent-foreground: oklch(0.98 0.005 285);
     --destructive: oklch(0.48 0.18 28);
-    --border: oklch(1 0 0 / 0.12); /* Fine white glass-rim border (12% opacity) */
+    --border: oklch(
+      1 0 0 / 0.12
+    ); /* Fine white glass-rim border (12% opacity) */
     --input: oklch(1 0 0 / 0.18); /* Visible input border */
-    --input-background: oklch(0.20 0.008 285 / 0.35); /* Sunken input background */
+    --input-background: oklch(
+      0.2 0.008 285 / 0.35
+    ); /* Sunken input background */
     --ring: oklch(0.98 0.005 285);
     --chart-1: oklch(0.98 0.005 285);
     --chart-2: oklch(0.65 0.008 285);
     --chart-3: oklch(0.45 0.005 285);
-    --chart-4: oklch(0.30 0.005 285);
+    --chart-4: oklch(0.3 0.005 285);
     --chart-5: oklch(0.18 0.01 285);
     --sidebar: oklch(0.18 0.005 285 / 0.55); /* Frosted sidebar */
     --sidebar-foreground: oklch(0.98 0.005 285);
@@ -124,7 +144,8 @@
   * {
     @apply border-border outline-ring/50;
   }
-  html, body {
+  html,
+  body {
     scrollbar-gutter: stable;
   }
   body {
@@ -143,21 +164,27 @@
     @apply bg-transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+    @apply rounded-full bg-slate-200 transition-colors hover:bg-slate-300;
   }
 
   .scroll-shadows {
     background:
       /* Shadows */
       radial-gradient(farthest-side at 50% 0, oklch(0 0 0 / 0.08), transparent),
-      radial-gradient(farthest-side at 50% 100%, oklch(0 0 0 / 0.08), transparent) 0 100%;
+      radial-gradient(
+          farthest-side at 50% 100%,
+          oklch(0 0 0 / 0.08),
+          transparent
+        )
+        0 100%;
     background-color: transparent;
     background-repeat: no-repeat;
-    background-size: 100% 14px, 100% 14px;
+    background-size:
+      100% 14px,
+      100% 14px;
     background-attachment: scroll, scroll;
   }
 }
-
 
 /* Force Sonner Toasts to match popover glass theme */
 [data-sonner-toast] {
@@ -167,40 +194,88 @@
 }
 
 /* SUCCESS (Green) */
-[data-sonner-toast][data-type=success] {
-  background: color-mix(in srgb, var(--color-green-500, #22c55e) 15%, transparent) !important;
-  border-color: color-mix(in srgb, var(--color-green-500, #22c55e) 25%, transparent) !important;
+[data-sonner-toast][data-type='success'] {
+  background: color-mix(
+    in srgb,
+    var(--color-green-500, #22c55e) 15%,
+    transparent
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--color-green-500, #22c55e) 25%,
+    transparent
+  ) !important;
   color: var(--color-green-600, #16a34a) !important;
 }
-.dark [data-sonner-toast][data-type=success] { color: var(--color-green-400, #4ade80) !important; }
-[data-sonner-toast][data-type=success] [data-icon] { color: inherit !important; }
+.dark [data-sonner-toast][data-type='success'] {
+  color: var(--color-green-400, #4ade80) !important;
+}
+[data-sonner-toast][data-type='success'] [data-icon] {
+  color: inherit !important;
+}
 
 /* ERROR (Red) */
-[data-sonner-toast][data-type=error] {
-  background: color-mix(in srgb, var(--color-red-500, #ef4444) 15%, transparent) !important;
-  border-color: color-mix(in srgb, var(--color-red-500, #ef4444) 25%, transparent) !important;
+[data-sonner-toast][data-type='error'] {
+  background: color-mix(
+    in srgb,
+    var(--color-red-500, #ef4444) 15%,
+    transparent
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--color-red-500, #ef4444) 25%,
+    transparent
+  ) !important;
   color: var(--color-red-600, #dc2626) !important;
 }
-.dark [data-sonner-toast][data-type=error] { color: var(--color-red-400, #f87171) !important; }
-[data-sonner-toast][data-type=error] [data-icon] { color: inherit !important; }
+.dark [data-sonner-toast][data-type='error'] {
+  color: var(--color-red-400, #f87171) !important;
+}
+[data-sonner-toast][data-type='error'] [data-icon] {
+  color: inherit !important;
+}
 
 /* WARNING (Amber) */
-[data-sonner-toast][data-type=warning] {
-  background: color-mix(in srgb, var(--color-amber-500, #f59e0b) 15%, transparent) !important;
-  border-color: color-mix(in srgb, var(--color-amber-500, #f59e0b) 25%, transparent) !important;
+[data-sonner-toast][data-type='warning'] {
+  background: color-mix(
+    in srgb,
+    var(--color-amber-500, #f59e0b) 15%,
+    transparent
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--color-amber-500, #f59e0b) 25%,
+    transparent
+  ) !important;
   color: var(--color-amber-600, #d97706) !important;
 }
-.dark [data-sonner-toast][data-type=warning] { color: var(--color-amber-400, #fbbf24) !important; }
-[data-sonner-toast][data-type=warning] [data-icon] { color: inherit !important; }
+.dark [data-sonner-toast][data-type='warning'] {
+  color: var(--color-amber-400, #fbbf24) !important;
+}
+[data-sonner-toast][data-type='warning'] [data-icon] {
+  color: inherit !important;
+}
 
 /* INFO (Blue) */
-[data-sonner-toast][data-type=info] {
-  background: color-mix(in srgb, var(--color-blue-500, #3b82f6) 15%, transparent) !important;
-  border-color: color-mix(in srgb, var(--color-blue-500, #3b82f6) 25%, transparent) !important;
+[data-sonner-toast][data-type='info'] {
+  background: color-mix(
+    in srgb,
+    var(--color-blue-500, #3b82f6) 15%,
+    transparent
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--color-blue-500, #3b82f6) 25%,
+    transparent
+  ) !important;
   color: var(--color-blue-600, #2563eb) !important;
 }
-.dark [data-sonner-toast][data-type=info] { color: var(--color-blue-400, #60a5fa) !important; }
-[data-sonner-toast][data-type=info] [data-icon] { color: inherit !important; }
+.dark [data-sonner-toast][data-type='info'] {
+  color: var(--color-blue-400, #60a5fa) !important;
+}
+[data-sonner-toast][data-type='info'] [data-icon] {
+  color: inherit !important;
+}
 
 /* Close Button Override - Matches Text Color */
 [data-sonner-toast] [data-close-button] {
@@ -212,21 +287,19 @@
   background: color-mix(in srgb, currentColor 25%, transparent) !important;
 }
 
-
 /* Global Cursor Styles for Clickable Elements */
-button, 
-a, 
-[role=button],
-[type=button],
-[type=submit],
-[type=
-eset],
+button,
+a,
+[role='button'],
+[type='button'],
+[type='submit'],
+[type='eset'],
 .cursor-pointer {
   cursor: pointer;
 }
 
 button:disabled,
-a[aria-disabled=	rue],
+a[aria-disabled='rue'],
 [disabled] {
   cursor: not-allowed;
 }

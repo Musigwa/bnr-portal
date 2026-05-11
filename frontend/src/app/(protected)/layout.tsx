@@ -1,14 +1,23 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useAuth } from '@/providers/auth.provider';
 import { Header } from './_components/Header';
 import { Footer } from './_components/Footer';
 
-export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
+export default function ProtectedLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   if (!user) {
@@ -16,12 +25,12 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="bg-background flex min-h-screen flex-col">
       <Header />
 
-      <div className="flex-1 flex flex-col container mx-auto max-w-7xl">
-        <main className="flex-1 py-8 px-4 md:px-8">
-          {children}
+      <div className="container mx-auto flex max-w-7xl flex-1 flex-col">
+        <main className="flex-1 px-4 py-8 md:px-8">
+          <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
         </main>
       </div>
 

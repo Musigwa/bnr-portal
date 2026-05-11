@@ -2,7 +2,12 @@
 
 import { FilterPopover } from '@/components/shared/filter-popover';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useApproveApplication, useAssignApplication, useGetApplications, useGetApplicationsStats } from '@/hooks/api/use-applications';
+import {
+  useApproveApplication,
+  useAssignApplication,
+  useGetApplications,
+  useGetApplicationsStats,
+} from '@/hooks/api/use-applications';
 import { useTableQuery } from '@/hooks/use-table-query';
 import { useAuth } from '@/providers/auth.provider';
 import { Role } from '@/types';
@@ -16,13 +21,18 @@ export default function DashboardPage() {
   const { query, setQuery } = useTableQuery();
 
   // Dashboard stats bounded by global date range
-  const { data: statsResponse, isLoading: statsLoading } = useGetApplicationsStats({ 
-    startDate: query.startDate,
-    endDate: query.endDate,
-  });
+  const { data: statsResponse, isLoading: statsLoading } =
+    useGetApplicationsStats({
+      startDate: query.startDate,
+      endDate: query.endDate,
+    });
 
   // Fetch paginated applications for the dashboard table
-  const { data: tableResponse, isLoading: tableLoading, isFetching } = useGetApplications({
+  const {
+    data: tableResponse,
+    isLoading: tableLoading,
+    isFetching,
+  } = useGetApplications({
     page: query.page,
     limit: query.limit,
     searchQuery: query.searchQuery,
@@ -41,26 +51,43 @@ export default function DashboardPage() {
   const handleAssign = async (id: string) => {
     try {
       await assignApp(id);
-    } catch {
-    }
+    } catch {}
   };
 
-  const handleApprove = async (id: string, notes: string = 'Quick approved from dashboard') => {
+  const handleApprove = async (
+    id: string,
+    notes: string = 'Quick approved from dashboard',
+  ) => {
     try {
       await approveApp({ id, notes });
-    } catch {
-    }
+    } catch {}
   };
 
   // Cache state for seamless transitions
   const getInitialCounts = () => {
-    return statsResponse || { total: 0, drafts: 0, submitted: 0, underReview: 0, pendingInfo: 0, reviewed: 0, approved: 0, rejected: 0 };
+    return (
+      statsResponse || {
+        total: 0,
+        drafts: 0,
+        submitted: 0,
+        underReview: 0,
+        pendingInfo: 0,
+        reviewed: 0,
+        approved: 0,
+        rejected: 0,
+      }
+    );
   };
 
   const [cachedCounts, setCachedCounts] = useState(getInitialCounts);
   const [cachedTableData, setCachedTableData] = useState(() => ({
     applications: tableResponse?.data || [],
-    meta: tableResponse?.meta || { total: 0, page: 1, limit: 10, totalPages: 0 }
+    meta: tableResponse?.meta || {
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 0,
+    },
   }));
 
   // Synchronize derived state
@@ -79,23 +106,25 @@ export default function DashboardPage() {
     if (tableResponse?.data) {
       setCachedTableData({
         applications: tableResponse.data,
-        meta: tableResponse.meta
+        meta: tableResponse.meta,
       });
     }
   }
 
   const queryClient = useQueryClient();
-  const hasCachedData = queryClient.getQueryCache().findAll({
-    queryKey: ['applications', 'list'],
-    exact: false
-  }).some(q => q.state.status === 'success');
+  const hasCachedData = queryClient
+    .getQueryCache()
+    .findAll({
+      queryKey: ['applications', 'list'],
+      exact: false,
+    })
+    .some((q) => q.state.status === 'success');
 
   const isInitialLoading =
-    !hasCachedData && (
-      authLoading ||
+    !hasCachedData &&
+    (authLoading ||
       (statsLoading && !statsResponse) ||
-      (tableLoading && !tableResponse)
-    );
+      (tableLoading && !tableResponse));
 
   if (isInitialLoading) {
     return (
@@ -112,16 +141,22 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col space-y-6 md:h-[calc(100vh-180px)] md:overflow-hidden min-h-0 px-2 -mx-2 py-2 -my-2">
+    <div className="-mx-2 -my-2 flex min-h-0 flex-col space-y-6 px-2 py-2 md:h-[calc(100vh-180px)] md:overflow-hidden">
       <div className="shrink-0">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+            <h1 className="text-foreground text-3xl font-bold tracking-tight">
+              Dashboard
+            </h1>
             <p className="text-muted-foreground mt-1 text-lg">
-              Overview of all <span className="font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md">{cachedCounts.total}</span> applications in the system.
+              Overview of all{' '}
+              <span className="text-primary bg-primary/10 rounded-md px-1.5 py-0.5 font-semibold">
+                {cachedCounts.total}
+              </span>{' '}
+              applications in the system.
             </p>
           </div>
-          
+
           {/* Global Filter Icon Popover */}
           <FilterPopover
             startDate={query.startDate ? String(query.startDate) : undefined}
@@ -138,14 +173,13 @@ export default function DashboardPage() {
         </div>
         <DashboardStats counts={cachedCounts} />
       </div>
-      
-      <DashboardTable 
+
+      <DashboardTable
         applications={cachedTableData.applications}
         userRole={user?.role || Role.APPLICANT}
         isLoading={isFetching}
         onAssign={handleAssign}
         onApprove={handleApprove}
-
         // Pagination
         currentPage={cachedTableData.meta.page}
         totalPages={cachedTableData.meta.totalPages}
@@ -153,11 +187,9 @@ export default function DashboardPage() {
         pageSize={cachedTableData.meta.limit}
         onPageChange={(page) => setQuery({ page })}
         onPageSizeChange={(limit) => setQuery({ limit, page: 1 })}
-
         // Search
         searchQuery={String(query.searchQuery || '')}
         onSearchChange={(searchQuery) => setQuery({ searchQuery, page: 1 })}
-
         // Filters
         activeFilters={{
           status: String(query.status || 'all'),
@@ -166,10 +198,20 @@ export default function DashboardPage() {
           institutionName: String(query.institutionName || ''),
         }}
         onFilterChange={(key, value) => {
-          setQuery({ [key]: value !== 'all' && value !== '' ? value : undefined, page: 1 });
+          setQuery({
+            [key]: value !== 'all' && value !== '' ? value : undefined,
+            page: 1,
+          });
         }}
         onClearFilters={() => {
-          setQuery({ status: undefined, institutionType: undefined, refNumber: undefined, institutionName: undefined, searchQuery: '', page: 1 });
+          setQuery({
+            status: undefined,
+            institutionType: undefined,
+            refNumber: undefined,
+            institutionName: undefined,
+            searchQuery: '',
+            page: 1,
+          });
         }}
       />
     </div>

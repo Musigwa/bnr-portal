@@ -1,13 +1,18 @@
 'use client';
 
-
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 import { Landmark } from 'lucide-react';
 import { useLogin } from '@/hooks/api/use-auth';
@@ -39,22 +44,27 @@ export function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-[400px] shadow-lg border-0 ring-1 ring-slate-200">
-        <CardHeader className="space-y-2 pb-6 pt-8">
-          <div className="flex justify-center mb-4">
-            <div className="bg-primary/10 p-3 rounded-full">
-              <Landmark className="h-8 w-8 text-primary" />
+    <div className="bg-background flex min-h-screen items-center justify-center px-4">
+      <Card className="w-full max-w-[400px] border-0 shadow-lg ring-1 ring-slate-200">
+        <CardHeader className="space-y-2 pt-8 pb-6">
+          <div className="mb-4 flex justify-center">
+            <div className="bg-primary/10 rounded-full p-3">
+              <Landmark className="text-primary h-8 w-8" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight text-center">
+          <CardTitle className="text-center text-2xl font-bold tracking-tight">
             Welcome to BNR Portal
           </CardTitle>
-          <CardDescription className="text-center text-muted-foreground">
+          <CardDescription className="text-muted-foreground text-center">
             Sign in to your account to continue
           </CardDescription>
         </CardHeader>
-        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit(onSubmit)(e);
+          }}
+        >
           <CardContent className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -79,12 +89,18 @@ export function LoginForm() {
                 className={errors.password ? 'border-red-500' : ''}
               />
               {errors.password && (
-                <p className="text-sm text-red-500">{errors.password.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.password.message}
+                </p>
               )}
             </div>
-            
+
             <div className="pt-4">
-              <Button type="submit" className="w-full h-11 text-base font-medium" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="h-11 w-full text-base font-medium"
+                disabled={isLoading}
+              >
                 {isLoading ? 'Signing in...' : 'Sign in'}
               </Button>
             </div>

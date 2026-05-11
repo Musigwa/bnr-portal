@@ -125,7 +125,10 @@ async function request<T>(
 }
 
 export const apiClient = {
-  get: <T>(endpoint: string, params?: Record<string, string | number | boolean | undefined>) => {
+  get: <T>(
+    endpoint: string,
+    params?: Record<string, string | number | boolean | undefined>,
+  ) => {
     let url = endpoint;
     if (params) {
       const searchParams = new URLSearchParams();
@@ -142,22 +145,33 @@ export const apiClient = {
     return request<T>(url);
   },
   post: <T>(endpoint: string, body?: unknown) =>
-    request<T>(endpoint, { method: 'POST', body: body ? JSON.stringify(body) : undefined }),
+    request<T>(endpoint, {
+      method: 'POST',
+      body: body ? JSON.stringify(body) : undefined,
+    }),
   patch: <T>(endpoint: string, body?: unknown) =>
-    request<T>(endpoint, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined }),
+    request<T>(endpoint, {
+      method: 'PATCH',
+      body: body ? JSON.stringify(body) : undefined,
+    }),
   delete: <T>(endpoint: string) => request<T>(endpoint, { method: 'DELETE' }),
   upload: <T>(endpoint: string, formData: FormData) =>
     request<T>(endpoint, { method: 'POST', body: formData }),
-  download: async (endpoint: string, onProgress?: (progress: number) => void): Promise<Blob> => {
+  download: async (
+    endpoint: string,
+    onProgress?: (progress: number) => void,
+  ): Promise<Blob> => {
     // We cannot use the standard request() wrapper because it enforces res.json()
     // We manually fetch the token and return the blob directly.
     const token = await getValidToken().catch(() => null);
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    
+
     const res = await fetch(`${API_URL}${endpoint}`, { headers });
     if (!res.ok) {
-      const isJson = res.headers.get('content-type')?.includes('application/json');
+      const isJson = res.headers
+        .get('content-type')
+        ?.includes('application/json');
       if (isJson) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || 'Failed to download file');
@@ -168,11 +182,11 @@ export const apiClient = {
     if (onProgress && res.body) {
       const contentLength = res.headers.get('content-length');
       const total = contentLength ? parseInt(contentLength, 10) : 0;
-      
+
       const reader = res.body.getReader();
       const chunks: Uint8Array[] = [];
       let receivedLength = 0;
-      
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -184,7 +198,9 @@ export const apiClient = {
           }
         }
       }
-      return new Blob(chunks as BlobPart[], { type: res.headers.get('content-type') || 'application/octet-stream' });
+      return new Blob(chunks as BlobPart[], {
+        type: res.headers.get('content-type') || 'application/octet-stream',
+      });
     }
 
     return res.blob();

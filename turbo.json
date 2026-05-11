@@ -2,10 +2,16 @@
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": [
     "NODE_ENV",
-    "NEXT_PUBLIC_API_URL",
-    "DATABASE_URL",
-    "JWT_SECRET",
-    "JWT_REFRESH_SECRET"
+    "DOMAIN_ROOT",
+    "NEXT_PUBLIC_*",
+    "NEXT_FRONTEND_*",
+    "BACKEND_*",
+    "DB_*",
+    "JWT_*",
+    "THROTTLE_*",
+    "S3_*",
+    "CORS_ORIGIN",
+    "MAX_FILE_SIZE_MB"
   ],
   "tasks": {
     "build": {
@@ -13,24 +19,41 @@
       "outputs": [
         ".next/**",
         "!.next/cache/**",
-        "dist/**"
+        "dist/**",
+        "lib/**"
       ]
+    },
+    "validate:turbo": {
+      "dependsOn": ["^validate:turbo"]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
+    "start": {
+      "cache": false,
+      "persistent": true
+    },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["^build", "^lint"]
+    },
+    "lint:fix": {
+      "cache": false
+    },
+    "format": {
+      "dependsOn": ["^format"]
+    },
+    "format:check": {
+      "dependsOn": ["^format:check"]
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["^build", "^typecheck"]
     },
     "test": {
-      "dependsOn": ["^test"]
+      "dependsOn": ["^build", "^test"]
     },
     "test:e2e": {
-      "dependsOn": ["^test:e2e"]
+      "dependsOn": ["^build", "^test:e2e"]
     }
   }
 }

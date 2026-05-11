@@ -33,6 +33,7 @@ ACID compliance is non-negotiable for a regulatory system. Row-level locking (`S
 | Table        | Purpose                             |
 | ------------ | ----------------------------------- |
 | User         | Identity and role                   |
+| Institution  | Bank, financial entity applying     |
 | Application  | Core entity, owns the state machine |
 | Document     | File metadata + versioning          |
 | AuditLog     | Append-only event log               |
@@ -118,7 +119,7 @@ The following architectural and UX enhancements have been successfully implement
 
 ### 6.1 Implemented Infrastructure & UX Features
 
-- **Multi-Stage Docker Builds**: Dockerfiles have been optimized to separate build dependencies from runtime, utilizing Alpine base images and `pnpm` caching, which drastically reduces image sizes and build times.
+- **Multi-Stage Docker Builds**: Dockerfiles have been optimized to separate build dependencies from runtime, utilizing Alpine base images and `pnpm` caching. They also leverage `turbo prune` to natively isolate and inject internal workspace dependencies (like `@bnr-portal/env`) without manual file copying.
 - **Next.js Standalone Output**: `next.config.ts` is configured with `output: 'standalone'` to produce a minimal production bundle without needing the full `node_modules` directory in the final container image.
 - **Advanced Frontend Analytics & UX**: The dashboard features complex data aggregation, dynamic custom date-range global filtering, and unified UI styling.
 - **Object Storage Migration**: Transitioned from local filesystem storage to MinIO (S3-compatible API), enabling robust, scalable document management using `StreamingService` for zero-memory footprint uploads.
@@ -146,3 +147,19 @@ The following architectural and UX enhancements have been successfully implement
   1. **Expand**: Introduce the new database column/table alongside the old one. Update the application to write to both the old and new structures (dual-writes) while continuing to read from the old.
   2. **Backfill**: Run a background migration script to securely copy and transform historical data from the old structure into the new structure. Switch application reads to the new structure once data is verified.
   3. **Contract**: Remove the dual-write logic from the application. Once deployed and stable, create a final migration to safely drop the deprecated column/table.
+
+---
+
+## 7. Security & Environment Architecture
+
+### Environment Configuration
+**Choice: Central Joi Schema in an Internal Package (`@bnr-portal/env`)**
+- The environment validation schema (`schema.ts`) and its CLI generation scripts have been cleanly extracted into a dedicated workspace package (`packages/env`). This prevents TypeScript compilers from improperly nesting build outputs (`dist/backend/src`) when attempting to resolve relative paths outside application boundaries.
+- No fallback values (`|| 5`) exist in the application code. If a value is required, it must be validated by the Joi schema and injected.
+- To handle `.env` files universally without runtime crashes, empty strings (`""`) are natively stripped in a shared `validateEnvironment` helper before Joi validation, treating them as strictly omitted.
+
+### Rate Limiting (Throttling)
+**Choice: Dual-Bucket Global Strategy with Strict Overrides**
+- **Global Buckets**: The application globally enforces a `short` bucket (blocks rapid micro-spikes) and a `long` bucket (blocks sustained scraping) simultaneously.
+- **Strict Override (`@StrictThrottle`)**: Highly sensitive endpoints (e.g., `/auth/login`) intercept the `short` bucket to enforce extremely tight configurations (e.g., 5 requests per 60 seconds).
+- **Dynamic Configuration Safety**: Even on strict endpoints, the global `long` bucket is never explicitly disabled (`SkipThrottle`). Because the strict limits are defined dynamically via environment variables, operations teams could alter them to be less restrictive than the global limits. Keeping the `long` bucket active ensures sustained protection is never accidentally bypassed due to environment misconfiguration.

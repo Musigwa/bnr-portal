@@ -14,22 +14,30 @@ export const metadata: Metadata = {
   description: 'National Bank of Rwanda — Bank Licensing & Compliance Portal',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-full flex flex-col`}>
-        <ThemeProvider 
-          attribute="class" 
-          defaultTheme="system" 
+      <body className={`${inter.className} flex min-h-full flex-col`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
           storageKey="bnr-portal-theme"
           enableSystem={true}
         >
-          <QueryProvider>
-            <AuthProvider>
-              {children}
-              <ToastProvider />
-            </AuthProvider>
-          </QueryProvider>
+          <>
+            <QueryProvider>
+              <AuthProvider>
+                <>
+                  {children}
+                  <ToastProvider />
+                </>
+              </AuthProvider>
+            </QueryProvider>
+          </>
         </ThemeProvider>
       </body>
     </html>

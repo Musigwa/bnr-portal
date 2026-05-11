@@ -17,7 +17,7 @@ export function useLogin() {
     },
     onSuccess: (userProfile) => {
       const redirectPath = searchParams.get('redirect');
-      
+
       if (redirectPath) {
         router.push(redirectPath);
       } else if (userProfile.role === Role.APPLICANT) {

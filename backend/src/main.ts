@@ -41,7 +41,8 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new GlobalExceptionFilter());
-  app.enableCors();
+  const origin = config.get<string>('security.corsOrigin');
+  app.enableCors({ origin });
 
   // Swagger
   const swaggerConfig = new DocumentBuilder()
@@ -64,10 +65,7 @@ async function bootstrap() {
 
   await app.listen(appPort);
   Logger.log(`API running at http://localhost:${appPort}`, 'Bootstrap');
-  Logger.log(
-    `📖 Swagger docs at http://localhost:${appPort}/docs`,
-    'Bootstrap',
-  );
+  Logger.log(`Swagger docs at http://localhost:${appPort}/docs`, 'Bootstrap');
 }
 bootstrap().catch((error) => {
   Logger.error(

@@ -28,6 +28,7 @@ export default async () => {
   process.env.DB_HOST = container.getHost();
   process.env.DB_PORT = container.getFirstMappedPort().toString();
   process.env.DB_USERNAME = 'test_user';
+  process.env.DB_USER = 'test_user';
   process.env.DB_PASSWORD = 'test_password';
   process.env.DB_NAME = 'bnr_portal_test';
 

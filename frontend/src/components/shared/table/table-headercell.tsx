@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { Filter, Search, X } from 'lucide-react';
@@ -31,7 +31,7 @@ export function TableHeaderCell<T>({
   const isFilterable = !!col.filterType;
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState(filterValue);
- 
+
   const [prevFilterValue, setPrevFilterValue] = useState(filterValue);
   if (prevFilterValue !== filterValue) {
     setPrevFilterValue(filterValue);
@@ -48,7 +48,14 @@ export function TableHeaderCell<T>({
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [col.filterKey, col.filterType, filterValue, inputValue, onFilterChange, setEditingKey]);
+  }, [
+    col.filterKey,
+    col.filterType,
+    filterValue,
+    inputValue,
+    onFilterChange,
+    setEditingKey,
+  ]);
 
   useEffect(() => {
     if (isEditing) {
@@ -80,7 +87,10 @@ export function TableHeaderCell<T>({
   if (isFilterable && (isEditing || isActive)) {
     if (col.filterType === 'input') {
       return (
-        <div className="relative flex items-center w-full min-w-36 max-w-56" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="relative flex w-full max-w-56 min-w-36 items-center"
+          onClick={(e) => e.stopPropagation()}
+        >
           <input
             ref={inputRef}
             type="text"
@@ -89,7 +99,7 @@ export function TableHeaderCell<T>({
             onChange={(e) => setInputValue(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
-            className="w-full text-xs h-8 px-2 pr-6 border border-border bg-card text-foreground rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary shadow-xs font-normal"
+            className="border-border bg-card text-foreground focus:ring-primary focus:border-primary h-8 w-full rounded-lg border px-2 pr-6 text-xs font-normal shadow-xs focus:ring-1 focus:outline-none"
           />
           {inputValue && (
             <button
@@ -100,7 +110,7 @@ export function TableHeaderCell<T>({
                 onFilterChange?.(col.filterKey!, '');
                 setEditingKey(null);
               }}
-              className="absolute right-2 text-muted-foreground hover:text-foreground cursor-pointer transition-colors p-0.5 rounded-full hover:bg-muted"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted absolute right-2 cursor-pointer rounded-full p-0.5 transition-colors"
             >
               <X className="h-3 w-3" />
             </button>
@@ -109,7 +119,10 @@ export function TableHeaderCell<T>({
       );
     } else if (col.filterType === 'select') {
       return (
-        <div className="relative flex items-center w-full min-w-36 max-w-56" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="relative flex w-full max-w-56 min-w-36 items-center"
+          onClick={(e) => e.stopPropagation()}
+        >
           <Select
             value={inputValue || 'all'}
             onValueChange={(val) => {
@@ -128,11 +141,12 @@ export function TableHeaderCell<T>({
           >
             <SelectTrigger
               size="sm"
-              className="h-8 text-xs pr-2 border-border bg-card shadow-xs"
+              className="border-border bg-card h-8 pr-2 text-xs shadow-xs"
             >
-              <span className="flex-1 text-left truncate">
+              <span className="flex-1 truncate text-left">
                 {inputValue && inputValue !== 'all'
-                  ? col.filterOptions?.find((o) => o.value === inputValue)?.label ?? inputValue
+                  ? (col.filterOptions?.find((o) => o.value === inputValue)
+                      ?.label ?? inputValue)
                   : `All ${col.label}`}
               </span>
             </SelectTrigger>
@@ -154,7 +168,7 @@ export function TableHeaderCell<T>({
                 onFilterChange?.(col.filterKey!, 'all');
                 setEditingKey(null);
               }}
-              className="absolute right-7 z-10 text-muted-foreground hover:text-foreground cursor-pointer transition-colors p-0.5 rounded-full hover:bg-muted"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted absolute right-7 z-10 cursor-pointer rounded-full p-0.5 transition-colors"
             >
               <X className="h-3 w-3" />
             </button>
@@ -166,18 +180,18 @@ export function TableHeaderCell<T>({
 
   const isRightAligned = col.className?.includes('text-right');
   const isCenterAligned = col.className?.includes('text-center');
-  const alignmentClass = isRightAligned 
-    ? 'justify-end' 
-    : isCenterAligned 
-      ? 'justify-center' 
+  const alignmentClass = isRightAligned
+    ? 'justify-end'
+    : isCenterAligned
+      ? 'justify-center'
       : 'justify-start';
 
   return (
     <div
       className={cn(
-        "flex items-center gap-1.5 group/header w-full h-8",
+        'group/header flex h-8 w-full items-center gap-1.5',
         alignmentClass,
-        isFilterable && "cursor-pointer select-none"
+        isFilterable && 'cursor-pointer select-none',
       )}
       onClick={() => {
         if (isFilterable) {
@@ -189,7 +203,7 @@ export function TableHeaderCell<T>({
       {isFilterable && (
         <button
           type="button"
-          className="opacity-0 group-hover/header:opacity-100 transition-opacity hover:text-primary text-muted-foreground cursor-pointer"
+          className="hover:text-primary text-muted-foreground cursor-pointer opacity-0 transition-opacity group-hover/header:opacity-100"
         >
           {col.filterType === 'input' ? (
             <Search className="h-3.5 w-3.5" />

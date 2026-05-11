@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { Application, AuditLog } from '@/types';
 import { notify } from '@/lib/notifications';
@@ -10,16 +15,32 @@ export const APPLICATION_KEYS = {
   audit: (id: string) => [...APPLICATION_KEYS.details(id), 'audit'] as const,
 };
 
-export function useGetApplications(params: Record<string, string | number | boolean | undefined> = {}) {
-  return useQuery<{ data: Application[]; meta: { total: number; page: number; limit: number; totalPages: number } }>({
+export function useGetApplications(
+  params: Record<string, string | number | boolean | undefined> = {},
+) {
+  return useQuery<{
+    data: Application[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }>({
     queryKey: [...APPLICATION_KEYS.lists(), params],
     queryFn: () => apiClient.get('/applications', params),
     placeholderData: keepPreviousData,
   });
 }
 
-export function useGetApplicationsStats(params: Record<string, string | number | boolean | undefined> = {}) {
-  return useQuery<{ total: number; drafts: number; submitted: number; underReview: number; pendingInfo: number; reviewed: number; approved: number; rejected: number }>({
+export function useGetApplicationsStats(
+  params: Record<string, string | number | boolean | undefined> = {},
+) {
+  return useQuery<{
+    total: number;
+    drafts: number;
+    submitted: number;
+    underReview: number;
+    pendingInfo: number;
+    reviewed: number;
+    approved: number;
+    rejected: number;
+  }>({
     queryKey: [...APPLICATION_KEYS.all, 'stats', params],
     queryFn: () => apiClient.get('/applications/stats', params),
     placeholderData: keepPreviousData,
@@ -45,21 +66,22 @@ export function useGetApplicationAudit(id: string, enabled = true) {
 export function useAssignApplication() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => apiClient.post(`/applications/${id}/assign-reviewer`),
+    mutationFn: (id: string) =>
+      apiClient.post(`/applications/${id}/assign-reviewer`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
       notify.success('Application assigned successfully');
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to assign application');
-    }
+    },
   });
 }
 
 export function useApproveApplication() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, notes }: { id: string, notes: string }) => 
+    mutationFn: ({ id, notes }: { id: string; notes: string }) =>
       apiClient.post(`/applications/${id}/approve`, { notes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
@@ -67,7 +89,7 @@ export function useApproveApplication() {
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to approve application');
-    }
+    },
   });
 }
 
@@ -81,14 +103,16 @@ export function useSubmitApplication() {
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to submit application');
-    }
+    },
   });
 }
 
 export function useCreateApplication() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: Partial<Application> & { suppressNotification?: boolean }) => {
+    mutationFn: (
+      payload: Partial<Application> & { suppressNotification?: boolean },
+    ) => {
       const data = { ...payload };
       delete data.suppressNotification;
       return apiClient.post<Application>('/applications', data);
@@ -101,14 +125,14 @@ export function useCreateApplication() {
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to create application');
-    }
+    },
   });
 }
 
 export function useRequestInfo() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, notes }: { id: string, notes: string }) => 
+    mutationFn: ({ id, notes }: { id: string; notes: string }) =>
       apiClient.post(`/applications/${id}/request-info`, { notes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
@@ -116,14 +140,20 @@ export function useRequestInfo() {
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to request information');
-    }
+    },
   });
 }
 
 export function useCompleteReview() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, reviewerNotes }: { id: string, reviewerNotes: string }) => 
+    mutationFn: ({
+      id,
+      reviewerNotes,
+    }: {
+      id: string;
+      reviewerNotes: string;
+    }) =>
       apiClient.post(`/applications/${id}/complete-review`, { reviewerNotes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
@@ -131,30 +161,41 @@ export function useCompleteReview() {
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to complete review');
-    }
+    },
   });
 }
 
 export function useRejectApplication() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, rejectionReason }: { id: string, rejectionReason: string }) => 
-      apiClient.post(`/applications/${id}/reject`, { rejectionReason }),
+    mutationFn: ({
+      id,
+      rejectionReason,
+    }: {
+      id: string;
+      rejectionReason: string;
+    }) => apiClient.post(`/applications/${id}/reject`, { rejectionReason }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
       notify.error('Application rejected successfully');
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to reject application');
-    }
+    },
   });
 }
 
 export function useUpdateApplication() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string, data: Partial<Application>, suppressNotification?: boolean }) => 
-      apiClient.patch<Application>(`/applications/${id}`, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<Application>;
+      suppressNotification?: boolean;
+    }) => apiClient.patch<Application>(`/applications/${id}`, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
       if (!variables.suppressNotification) {
@@ -163,7 +204,7 @@ export function useUpdateApplication() {
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to update application');
-    }
+    },
   });
 }
 
@@ -177,21 +218,31 @@ export function useResubmitApplication() {
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to resubmit application');
-    }
+    },
   });
 }
 
 export function useDeleteDocument() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ applicationId, documentId }: { applicationId: string, documentId: string }) => 
-      apiClient.delete(`/applications/${applicationId}/documents/${documentId}`),
+    mutationFn: ({
+      applicationId,
+      documentId,
+    }: {
+      applicationId: string;
+      documentId: string;
+    }) =>
+      apiClient.delete(
+        `/applications/${applicationId}/documents/${documentId}`,
+      ),
     onSuccess: (_, { applicationId }) => {
-      queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.details(applicationId) });
+      queryClient.invalidateQueries({
+        queryKey: APPLICATION_KEYS.details(applicationId),
+      });
       notify.error('Document deleted successfully');
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to delete document');
-    }
+    },
   });
 }

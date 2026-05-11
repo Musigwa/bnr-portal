@@ -1,0 +1,32 @@
+{
+  "name": "@bnr-portal/env",
+  "version": "1.0.0",
+  "private": true,
+  "main": "lib/schema.js",
+  "types": "lib/schema.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write . --ignore-path ../../.prettierignore",
+    "format:check": "prettier --check . --ignore-path ../../.prettierignore",
+    "typecheck": "tsc --noEmit",
+    "generate": "tsx scripts/generate-env.ts",
+    "validate": "tsx scripts/validate-env.ts",
+    "validate:turbo": "tsx scripts/validate-env.ts --turbo-only"
+  },
+  "dependencies": {
+    "joi": "^18.2.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/node": "^20.19.41",
+    "eslint": "^10.5.0",
+    "eslint-plugin-prettier": "^5.5.5",
+    "globals": "^17.6.0",
+    "prettier": "^3.8.4",
+    "tsx": "^4.22.4",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.59.3"
+  }
+}

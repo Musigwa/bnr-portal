@@ -14,8 +14,14 @@ import { ApplicationTable } from './_components/application-table';
 export default function ApplicationsPage() {
   const { user } = useAuth();
   const { query, setQuery } = useTableQuery();
-  
-  const { data: response, isLoading, isFetching, error, refetch } = useGetApplications({
+
+  const {
+    data: response,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+  } = useGetApplications({
     page: query.page,
     limit: query.limit,
     status: query.status,
@@ -27,7 +33,7 @@ export default function ApplicationsPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <Skeleton className="h-10 w-48" />
           <Skeleton className="h-10 w-32" />
         </div>
@@ -45,7 +51,12 @@ export default function ApplicationsPage() {
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
             Failed to load applications. Please try again.
-            <Button variant="outline" size="sm" className="ml-4" onClick={() => refetch()}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-4"
+              onClick={() => refetch()}
+            >
               Retry
             </Button>
           </AlertDescription>
@@ -55,29 +66,38 @@ export default function ApplicationsPage() {
   }
 
   const applications = response?.data || [];
-  const meta = response?.meta || { total: 0, page: 1, limit: 10, totalPages: 0 };
+  const meta = response?.meta || {
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0,
+  };
 
   return (
-    <div className="flex flex-col space-y-6 md:h-[calc(100vh-180px)] md:overflow-hidden min-h-0 px-2 -mx-2 py-2 -my-2">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+    <div className="-mx-2 -my-2 flex min-h-0 flex-col space-y-6 px-2 py-2 md:h-[calc(100vh-180px)] md:overflow-hidden">
+      <div className="flex shrink-0 flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">My Applications</h1>
+          <h1 className="text-foreground text-3xl font-bold tracking-tight">
+            My Applications
+          </h1>
           <p className="text-muted-foreground mt-1 text-lg">
             Manage and track your bank licensing applications.
           </p>
         </div>
-        <Link href="/applications/new" className={buttonVariants({ variant: 'default' })}>
+        <Link
+          href="/applications/new"
+          className={buttonVariants({ variant: 'default' })}
+        >
           <Plus className="mr-2 h-4 w-4" /> New Application
         </Link>
       </div>
-      
-      <ApplicationTable 
-        className="flex-1 flex flex-col overflow-hidden min-h-0"
+
+      <ApplicationTable
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
         maxHeight="flex-1"
         applications={applications}
         role={user?.role || Role.APPLICANT}
         isLoading={isFetching}
-        
         // Pagination
         currentPage={meta.page}
         totalPages={meta.totalPages}
@@ -85,7 +105,6 @@ export default function ApplicationsPage() {
         pageSize={meta.limit}
         onPageChange={(page) => setQuery({ page })}
         onPageSizeChange={(limit) => setQuery({ limit, page: 1 })}
-        
         // Search & Filters
         activeFilters={{
           status: String(query.status || 'all'),
@@ -94,10 +113,19 @@ export default function ApplicationsPage() {
           institutionName: String(query.institutionName || ''),
         }}
         onFilterChange={(key, value) => {
-          setQuery({ [key]: value !== 'all' && value !== '' ? value : undefined, page: 1 });
+          setQuery({
+            [key]: value !== 'all' && value !== '' ? value : undefined,
+            page: 1,
+          });
         }}
         onClearFilters={() => {
-          setQuery({ status: undefined, institutionType: undefined, refNumber: undefined, institutionName: undefined, page: 1 });
+          setQuery({
+            status: undefined,
+            institutionType: undefined,
+            refNumber: undefined,
+            institutionName: undefined,
+            page: 1,
+          });
         }}
       />
     </div>

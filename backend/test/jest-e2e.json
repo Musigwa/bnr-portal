@@ -10,9 +10,7 @@
     "^@/(.*)$": "<rootDir>/../src/$1",
     "^src/(.*)$": "<rootDir>/../src/$1"
   },
-  "transformIgnorePatterns": [
-    "node_modules/(?!(archiver)/)"
-  ],
+  "transformIgnorePatterns": ["node_modules/(?!(archiver)/)"],
   "setupFiles": ["<rootDir>/setup.ts"],
   "globalSetup": "<rootDir>/globalSetup.ts",
   "globalTeardown": "<rootDir>/globalTeardown.ts"

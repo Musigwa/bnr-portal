@@ -6,39 +6,25 @@ This is a monorepo containing the full-stack application for the Bank Licensing 
 
 - `backend/`: NestJS REST API with PostgreSQL (via Prisma) and MinIO object storage.
 - `frontend/`: Next.js App Router with Tailwind CSS and shadcn/ui.
+- `packages/env/`: Shared internal workspace package enforcing strict environment variable validation and type-safety across both apps.
 - `docs/architecture.md`: Detailed architecture and design decisions.
 
 ## Execution & Deployment Strategies
 
 ### Environment Variables
 
-The project uses a **Single Source of Truth** for environment variables. All variables are managed at the monorepo root.
+The project uses a **Single Source of Truth** for environment variables managed at the monorepo root. These variables are strictly validated at runtime by the internal `@bnr-portal/env` package. If a required variable is missing, the application will refuse to boot.
 
-1. Create your environment files from the example:
-
-   - For development: Create `.env.development`
-   - For production: Create `.env.production`
-2. Copy the example file and fill in the values:
-
+**Interactive Setup (Recommended):**
+   You can easily generate a complete, valid `.env` file by running the interactive wizard:
    ```bash
-   cp .env.example .env.development
+   pnpm env:generate
    ```
-
-**Note:** You no longer need to copy `.env` files into the `frontend` or `backend` subdirectories for local development. The `dev` scripts are configured to load them from the root. For production builds and runtime (e.g., Docker), the environment is managed by the host/orchestrator.
+**Note:** You don't need to copy `.env` files into the `frontend` or `backend` subdirectories for local development. The `dev` scripts are configured to load them from the root. For production builds and runtime (e.g., Docker), the environment is managed by the host/orchestrator.
 
 ### 1. Local Environment
 
-#### A. Using Docker (Recommended)
-
-Run the entire system (Database, Backend, and Frontend) using Docker Compose:
-
-```bash
-NODE_ENV=development docker compose -f docker.compose.yml --env-file .env.development --profile development up backend-dev frontend-dev postgres --build
-```
-
-#### B. Native Development
-
-This is the fastest way for rapid iteration. We use `pnpm` workspaces and `turbo` to orchestrate both apps from the root.
+The fastest and most stable way to develop locally is by running the Node.js application code natively on your host machine while using Docker solely for infrastructure dependencies (Database and Object Storage). We use `pnpm` workspaces and `turbo` to orchestrate both apps from the root.
 
 1. **Install Dependencies:**
 
@@ -52,7 +38,7 @@ This is the fastest way for rapid iteration. We use `pnpm` workspaces and `turbo
    pnpm dev
    ```
 
-   *This will concurrently start the PostgreSQL and MinIO Docker containers in the background, and then use Turborepo to seamlessly start the Next.js and NestJS servers in parallel, injecting the root `.env.development` variables into both.*
+   *This will concurrently start the PostgreSQL and MinIO Docker containers in the background, and then use Turborepo to seamlessly start the Next.js and NestJS servers in parallel, injecting the root `.env` variables into both.*
 3. **Database Setup:**
    If you need to run Prisma migrations:
 
@@ -78,12 +64,13 @@ This is the fastest way for rapid iteration. We use `pnpm` workspaces and `turbo
    Stop `pnpm dev`, wipe the Postgres volume, and restart:
 
    ```bash
-   docker compose -f docker.compose.yml --env-file .env.development down -v
+   docker compose -f docker.compose.yml down -v
    pnpm dev
    ```
 
    *Method 2 (Using Swagger UI):*
    Because the API is fully documented, you can easily perform the reset directly from your browser:
+
    1. Open the Swagger UI at [http://localhost:3002/docs](http://localhost:3002/docs)
    2. Go to the `Auth` section and execute `POST /auth/login` using the Admin credentials:
       ```json
@@ -101,10 +88,15 @@ This is the fastest way for rapid iteration. We use `pnpm` workspaces and `turbo
 
 The application is automatically deployed to production via GitHub Actions.
 
-> **⚠️ Important SSL Certificate Notice**Since our deployment uses `nip.io` with self-signed certificates, your browser will initially block connections to the backend API. To use the application, you **must** first access the backend Swagger UI, accept the security warning ("Proceed to unsafe"), and **try out at least one endpoint** (e.g., a simple GET request) to unlock full access before opening the Web App.
+> **Zero-Downtime Architecture**: Deployments are orchestrated using a Blue/Green strategy. When a new image is pushed, the GitHub Action starts a "Green" container alongside the active "Blue" container. It polls the new container's health-check endpoint until it is fully booted, and then instantly flips the Caddy reverse proxy to route traffic to the new container. This guarantees zero downtime for end-users during deployments.
 >
-> 1. **API Docs (Access First)**: [Swagger UI](https://api.bnr-portal.212.47.77.2.nip.io/docs)
-> 2. **Frontend**: [Web App](https://bnr-portal.212.47.77.2.nip.io)
+> **Important SSL Certificate Notice:** Since our deployment uses `nip.io` and public Certificate Authorities often rate-limit or block free dynamic domains, your browser will initially block background connections to the backend API due to an untrusted certificate. To bypass the "Failed to fetch" error, you have two options:
+>
+> - **Option A (Swagger Bypass):** First access the backend Swagger UI, accept the security warning ("Advanced -> Proceed") if it pops, and try out at least one endpoint to unlock full access before opening the Web App.
+> - **Option B (Login Retry):** Navigate straight to the Web App. If you enter your credentials on the login page and fail to navigate to the portal with *no error message shown*, the SSL is silently blocking the request. Simply retry logging in one more time to push through the warning, or open the API URL directly in a new tab to accept the certificate.
+
+1. **API Docs**: [Swagger UI](https://api.bnr-portal.212.47.77.2.nip.io/docs)
+2. **Frontend**: [Web App](https://bnr-portal.212.47.77.2.nip.io)
 
 ## Documentation
 

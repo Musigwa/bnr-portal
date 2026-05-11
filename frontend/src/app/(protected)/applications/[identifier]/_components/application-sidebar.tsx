@@ -9,11 +9,15 @@ interface ApplicationSidebarProps {
   userRole: Role;
 }
 
-export function ApplicationSidebar({ app, auditLogs, userRole }: ApplicationSidebarProps) {
+export function ApplicationSidebar({
+  app,
+  auditLogs,
+  userRole,
+}: ApplicationSidebarProps) {
   const isInternal = userRole !== Role.APPLICANT;
 
   return (
-    <div className="md:col-span-3 space-y-6">
+    <div className="space-y-6 md:col-span-3">
       {/* Sidebars for STAFF ONLY */}
       {isInternal && (
         <Card className="border-border overflow-hidden">
@@ -22,21 +26,25 @@ export function ApplicationSidebar({ app, auditLogs, userRole }: ApplicationSide
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                <UserPlus className="h-5 w-5 text-muted-foreground" />
+              <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-full">
+                <UserPlus className="text-muted-foreground h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-medium text-foreground">Reviewer</p>
-                <p className="text-sm text-muted-foreground">{app.reviewer?.fullName || 'Not assigned'}</p>
+                <p className="text-foreground text-sm font-medium">Reviewer</p>
+                <p className="text-muted-foreground text-sm">
+                  {app.reviewer?.fullName || 'Not assigned'}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+              <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-full">
+                <CheckCircle2 className="text-muted-foreground h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-medium text-foreground">Approver</p>
-                <p className="text-sm text-muted-foreground">{app.approver?.fullName || 'Not decided'}</p>
+                <p className="text-foreground text-sm font-medium">Approver</p>
+                <p className="text-muted-foreground text-sm">
+                  {app.approver?.fullName || 'Not decided'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -44,11 +52,11 @@ export function ApplicationSidebar({ app, auditLogs, userRole }: ApplicationSide
       )}
 
       <Card className="border-border overflow-hidden">
-        <CardHeader className="border-b flex flex-row items-center gap-2">
-          <Clock className="h-5 w-5 text-muted-foreground" />
+        <CardHeader className="flex flex-row items-center gap-2 border-b">
+          <Clock className="text-muted-foreground h-5 w-5" />
           <CardTitle className="text-xl">Audit History</CardTitle>
         </CardHeader>
-        <CardContent className="max-h-[558px] overflow-y-auto custom-scrollbar">
+        <CardContent className="custom-scrollbar max-h-[558px] overflow-y-auto">
           <AuditTimeline logs={auditLogs || []} />
         </CardContent>
       </Card>

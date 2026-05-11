@@ -1,4 +1,4 @@
-# 4. Unified CI/CD Pipeline & GitHub Composite Actions
+# ADR 0004: Unified CI/CD Pipeline & GitHub Composite Actions
 
 ## Status
 

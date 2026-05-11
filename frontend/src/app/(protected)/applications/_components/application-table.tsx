@@ -12,7 +12,7 @@ interface ApplicationTableProps {
   onApprove?: (id: string) => void;
   isActionLoading?: boolean;
   isLoading?: boolean;
-  
+
   // Pagination props
   currentPage: number;
   totalPages: number;
@@ -31,10 +31,10 @@ interface ApplicationTableProps {
   maxHeight?: string;
 }
 
-export function ApplicationTable({ 
-  applications, 
-  role, 
-  onAssign, 
+export function ApplicationTable({
+  applications,
+  role,
+  onAssign,
   onApprove,
   isActionLoading,
   currentPage,
@@ -52,9 +52,12 @@ export function ApplicationTable({
 
   const getActionLabel = (status: ApplicationStatus) => {
     switch (status) {
-      case ApplicationStatus.DRAFT: return 'Continue';
-      case ApplicationStatus.PENDING_INFO: return 'Update';
-      default: return 'View';
+      case ApplicationStatus.DRAFT:
+        return 'Continue';
+      case ApplicationStatus.PENDING_INFO:
+        return 'Update';
+      default:
+        return 'View';
     }
   };
 
@@ -71,19 +74,16 @@ export function ApplicationTable({
     router.push(`/applications/${app.refNumber}`);
   };
 
-
   return (
     <DataTable
       data={applications}
       columns={columns}
       onRowClick={onRowClick}
       isLoading={isLoading}
-
       // Inline column filter props
       activeFilters={activeFilters}
       onFilterChange={onFilterChange}
       onClear={onClearFilters}
-
       // Pagination props
       currentPage={currentPage}
       totalPages={totalPages}
