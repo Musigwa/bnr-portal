@@ -19,7 +19,7 @@ export function useGetApplications(params: Record<string, string | number | bool
 }
 
 export function useGetApplicationsStats(params: Record<string, string | number | boolean | undefined> = {}) {
-  return useQuery<{ total: number; pending: number; awaitingDecision: number; decided: number }>({
+  return useQuery<{ total: number; drafts: number; submitted: number; underReview: number; pendingInfo: number; reviewed: number; approved: number; rejected: number }>({
     queryKey: [...APPLICATION_KEYS.all, 'stats', params],
     queryFn: () => apiClient.get('/applications/stats', params),
     placeholderData: keepPreviousData,
@@ -88,10 +88,16 @@ export function useSubmitApplication() {
 export function useCreateApplication() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<Application>) => apiClient.post<Application>('/applications', data),
-    onSuccess: () => {
+    mutationFn: (payload: Partial<Application> & { suppressNotification?: boolean }) => {
+      const data = { ...payload };
+      delete data.suppressNotification;
+      return apiClient.post<Application>('/applications', data);
+    },
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
-      notify.success('Application created successfully');
+      if (!variables.suppressNotification) {
+        notify.success('Application created successfully');
+      }
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to create application');
@@ -106,7 +112,7 @@ export function useRequestInfo() {
       apiClient.post(`/applications/${id}/request-info`, { notes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
-      notify.success('Information requested successfully');
+      notify.warning('Information requested successfully');
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to request information');
@@ -136,7 +142,7 @@ export function useRejectApplication() {
       apiClient.post(`/applications/${id}/reject`, { rejectionReason }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
-      notify.success('Application rejected successfully');
+      notify.info('Application rejected successfully');
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to reject application');
@@ -147,11 +153,13 @@ export function useRejectApplication() {
 export function useUpdateApplication() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string, data: Partial<Application> }) => 
+    mutationFn: ({ id, data }: { id: string, data: Partial<Application>, suppressNotification?: boolean }) => 
       apiClient.patch<Application>(`/applications/${id}`, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
-      notify.success('Application updated successfully');
+      if (!variables.suppressNotification) {
+        notify.success('Application updated successfully');
+      }
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to update application');
@@ -180,7 +188,7 @@ export function useDeleteDocument() {
       apiClient.delete(`/applications/${applicationId}/documents/${documentId}`),
     onSuccess: (_, { applicationId }) => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.details(applicationId) });
-      notify.success('Document deleted successfully');
+      notify.info('Document deleted successfully');
     },
     onError: (error: { message?: string }) => {
       notify.error(error.message || 'Failed to delete document');

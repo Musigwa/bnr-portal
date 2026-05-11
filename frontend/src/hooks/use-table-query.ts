@@ -15,7 +15,7 @@ export function useTableQuery() {
     });
     const queryParams: Record<string, string | number | boolean | undefined> = {
       page: Number(params.page) || 1,
-      limit: Number(params.limit) || 5,
+      limit: Number(params.limit) || 10,
     };
 
     // Enum filters (status, institutionType…) → uppercase for backend
@@ -39,7 +39,7 @@ export function useTableQuery() {
       
       const defaults: Record<string, string> = {
         page: '1',
-        limit: '5',
+        limit: '10',
       };
 
       Object.entries(newParams).forEach(([key, value]) => {

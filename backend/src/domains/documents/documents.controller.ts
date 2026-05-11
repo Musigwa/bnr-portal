@@ -19,6 +19,8 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import type { User } from '@prisma/client';
+import * as fs from 'fs';
+import { ZipArchive } from 'archiver';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -79,6 +81,46 @@ export class DocumentsController {
     @CurrentUser() user: User,
   ) {
     return this.service.findAll(applicationId, user);
+  }
+
+  @ApiOperation({ summary: 'Download all documents as a ZIP archive' })
+  @Get('download-all')
+  @Roles(Role.APPLICANT, Role.REVIEWER, Role.APPROVER, Role.ADMIN)
+  async downloadAll(
+    @Param('applicationId') applicationId: string,
+    @CurrentUser() user: User,
+    @Res() res: Response,
+  ) {
+    const { app, documents } = await this.service.getDocumentsForArchive(
+      applicationId,
+      user,
+    );
+
+    const archive = new ZipArchive({
+      zlib: { level: 9 }, // Maximum compression
+    });
+
+    archive.on('error', (err) => {
+      throw err;
+    });
+
+    const zipFilename = `Application-${app.refNumber}-Documents.zip`;
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${zipFilename}"`,
+    );
+
+    archive.pipe(res);
+
+    for (const doc of documents) {
+      if (fs.existsSync(doc.storagePath)) {
+        archive.file(doc.storagePath, { name: doc.fileName });
+      }
+    }
+
+    await archive.finalize();
   }
 
   @ApiOperation({ summary: 'Download document by ID' })

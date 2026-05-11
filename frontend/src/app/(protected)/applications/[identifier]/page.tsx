@@ -45,9 +45,83 @@ export default function ApplicationDetailsPage() {
   const { data: app, isLoading: appLoading, isError } = useGetApplicationById(identifier);
   const { data: auditLogs } = useGetApplicationAudit(identifier);
 
+  const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+
   const handleDownloadDocument = async (documentId: string, fileName: string) => {
     try {
-      const blob = await apiClient.download(`/applications/${app?.id}/documents/${documentId}/download`);
+      setDownloadProgress(prev => ({ ...prev, [documentId]: 0 }));
+      
+      const blob = await apiClient.download(
+        `/applications/${app?.id}/documents/${documentId}/download`,
+        (progress) => setDownloadProgress(prev => ({ ...prev, [documentId]: progress }))
+      );
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setTimeout(() => {
+        setDownloadProgress(prev => {
+          const newState = { ...prev };
+          delete newState[documentId];
+          return newState;
+        });
+      }, 1000);
+    } catch {
+      toast.error('Failed to download document');
+      setDownloadProgress(prev => {
+        const newState = { ...prev };
+        delete newState[documentId];
+        return newState;
+      });
+    }
+  };
+
+  const handlePreviewDocument = async (documentId: string) => {
+    try {
+      setDownloadProgress(prev => ({ ...prev, [documentId]: 0 }));
+      
+      const blob = await apiClient.download(
+        `/applications/${app?.id}/documents/${documentId}/download`,
+        (progress) => setDownloadProgress(prev => ({ ...prev, [documentId]: progress }))
+      );
+      
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      
+      // Clean up progress indicator
+      setTimeout(() => {
+        setDownloadProgress(prev => {
+          const newState = { ...prev };
+          delete newState[documentId];
+          return newState;
+        });
+      }, 1000);
+    } catch {
+      toast.error('Failed to preview document');
+      setDownloadProgress(prev => {
+        const newState = { ...prev };
+        delete newState[documentId];
+        return newState;
+      });
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    if (!app?.documents || app.documents.length === 0) return;
+    
+    setIsDownloadingAll(true);
+    try {
+      const blob = await apiClient.download(`/applications/${app.id}/documents/download-all`);
+      
+      const fileName = `Application-${app.refNumber}-Documents.zip`;
+      
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -57,16 +131,10 @@ export default function ApplicationDetailsPage() {
       window.URL.revokeObjectURL(url);
       a.remove();
     } catch (error) {
-      toast.error('Failed to download document');
-    }
-  };
-
-  const handleDownloadAll = async () => {
-    if (!app?.documents || app.documents.length === 0) return;
-    
-    for (const doc of app.documents) {
-      await handleDownloadDocument(doc.id, doc.fileName);
-      await new Promise(resolve => setTimeout(resolve, 300));
+      console.error('Batch download failed:', error);
+      toast.error('Failed to download documents archive');
+    } finally {
+      setIsDownloadingAll(false);
     }
   };
 
@@ -128,7 +196,7 @@ export default function ApplicationDetailsPage() {
           <ApplicationDetailsCard app={app} />
 
           <Card className="border-border overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between bg-muted/30 border-b">
+            <CardHeader className="flex flex-row items-center justify-between border-b">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-muted-foreground" />
                 <CardTitle className="text-xl">Supporting documents</CardTitle>
@@ -143,15 +211,26 @@ export default function ApplicationDetailsPage() {
                 size="sm" 
                 className="h-9 px-4 font-bold shadow-sm"
                 onClick={handleDownloadAll}
-                disabled={!app.documents || app.documents.length === 0}
+                disabled={!app.documents || app.documents.length === 0 || isDownloadingAll}
               >
-                <Download className="mr-2 h-4 w-4" /> Download All
+                {isDownloadingAll ? (
+                  <>
+                    <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" /> Download All
+                  </>
+                )}
               </Button>
             </CardHeader>
             <CardContent>
               <DocumentList 
                 documents={app.documents || []} 
                 onDownload={handleDownloadDocument}
+                onPreview={handlePreviewDocument}
+                downloadProgress={downloadProgress}
               />
             </CardContent>
           </Card>

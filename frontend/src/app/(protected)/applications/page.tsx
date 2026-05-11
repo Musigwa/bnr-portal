@@ -58,7 +58,7 @@ export default function ApplicationsPage() {
   const meta = response?.meta || { total: 0, page: 1, limit: 10, totalPages: 0 };
 
   return (
-    <div className="flex flex-col space-y-6 md:h-[calc(100vh-180px)] md:overflow-hidden min-h-0">
+    <div className="flex flex-col space-y-6 md:h-[calc(100vh-180px)] md:overflow-hidden min-h-0 px-2 -mx-2 py-2 -my-2">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">My Applications</h1>

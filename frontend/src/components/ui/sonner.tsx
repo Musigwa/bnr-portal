@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
@@ -28,19 +28,24 @@ const Toaster = ({ ...props }: ToasterProps) => {
           <Loader2Icon className="size-4 animate-spin" />
         ),
       }}
-      style={
-        {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
-        } as React.CSSProperties
-      }
       toastOptions={{
         classNames: {
-          toast: "cn-toast",
+          toast:
+            "group toast group-[.toaster]:!bg-popover group-[.toaster]:!border-border group-[.toaster]:shadow-lg group-[.toaster]:backdrop-blur-xl group-[.toaster]:backdrop-saturate-150",
+          description: "group-[.toast]:text-muted-foreground",
+          actionButton:
+            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+          cancelButton:
+            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+          closeButton:
+            "group-[.toast]:!bg-background group-[.toast]:!text-foreground group-[.toast]:!border-border hover:group-[.toast]:!bg-muted",
+          success: "group-[.toaster]:!text-emerald-600 dark:group-[.toaster]:!text-emerald-400",
+          error: "group-[.toaster]:!text-destructive",
+          warning: "group-[.toaster]:!text-amber-500",
+          info: "group-[.toaster]:!text-blue-500",
         },
       }}
+
       {...props}
     />
   )

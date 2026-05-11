@@ -206,24 +206,33 @@ export class ApplicationsService {
 
     const stats = {
       total: 0,
-      pending: 0,
-      awaitingDecision: 0,
-      decided: 0,
+      drafts: 0,
+      submitted: 0,
+      underReview: 0,
+      pendingInfo: 0,
+      reviewed: 0,
+      approved: 0,
+      rejected: 0,
     };
 
     groups.forEach((group) => {
       const count = group._count._all;
       stats.total += count;
 
-      if (group.status === ApplicationStatus.SUBMITTED) {
-        stats.pending += count;
+      if (group.status === ApplicationStatus.DRAFT) {
+        stats.drafts += count;
+      } else if (group.status === ApplicationStatus.SUBMITTED) {
+        stats.submitted += count;
+      } else if (group.status === ApplicationStatus.UNDER_REVIEW) {
+        stats.underReview += count;
+      } else if (group.status === ApplicationStatus.PENDING_INFO) {
+        stats.pendingInfo += count;
       } else if (group.status === ApplicationStatus.REVIEWED) {
-        stats.awaitingDecision += count;
-      } else if (
-        group.status === ApplicationStatus.APPROVED ||
-        group.status === ApplicationStatus.REJECTED
-      ) {
-        stats.decided += count;
+        stats.reviewed += count;
+      } else if (group.status === ApplicationStatus.APPROVED) {
+        stats.approved += count;
+      } else if (group.status === ApplicationStatus.REJECTED) {
+        stats.rejected += count;
       }
     });
 

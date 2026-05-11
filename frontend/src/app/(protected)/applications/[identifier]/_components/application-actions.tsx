@@ -8,7 +8,6 @@ import {
   useApproveApplication, useAssignApplication, useCompleteReview, 
   useRejectApplication, useRequestInfo, useResubmitApplication, useSubmitApplication 
 } from '@/hooks/api/use-applications';
-import { toast } from 'sonner';
 
 interface ActionDialogState {
   open: boolean;
@@ -41,10 +40,9 @@ export function ApplicationActions({ app, userRole, userId, setActionDialog }: A
   const { mutateAsync: submitApp } = useSubmitApplication();
   const { mutateAsync: resubmit } = useResubmitApplication();
 
-  const handleAction = async (actionFn: () => Promise<unknown>, successMessage: string) => {
+  const handleAction = async (actionFn: () => Promise<unknown>) => {
     try {
       await actionFn();
-      toast.success(successMessage);
       setActionDialog({ open: false, title: '', description: '', confirmAction: async () => {} });
     } catch {
       // Error handled by API client
@@ -65,7 +63,7 @@ export function ApplicationActions({ app, userRole, userId, setActionDialog }: A
                 description: 'You will be responsible for reviewing this application. This action will change the status to Under Review.',
                 confirmText: 'Assign Application',
                 confirmAction: async () => { 
-                  await handleAction(() => assignApp(app.id), 'Application assigned successfully'); 
+                  await handleAction(() => assignApp(app.id)); 
                 }
               })}
             >
@@ -87,7 +85,7 @@ export function ApplicationActions({ app, userRole, userId, setActionDialog }: A
                   noteLabel: 'Reason for Request',
                   notePlaceholder: 'Describe what needs to be updated...',
                   confirmAction: async (note) => { 
-                    await handleAction(() => requestInfo({ id: app.id, notes: note || '' }), 'Information request sent'); 
+                    await handleAction(() => requestInfo({ id: app.id, notes: note || '' })); 
                   }
                 })}
               >
@@ -104,7 +102,7 @@ export function ApplicationActions({ app, userRole, userId, setActionDialog }: A
                   noteLabel: 'Reviewer Notes',
                   notePlaceholder: 'Summarize your findings and recommendations...',
                   confirmAction: async (note) => { 
-                    await handleAction(() => completeReview({ id: app.id, reviewerNotes: note || '' }), 'Review completed successfully'); 
+                    await handleAction(() => completeReview({ id: app.id, reviewerNotes: note || '' })); 
                   }
                 })}
               >
@@ -128,7 +126,7 @@ export function ApplicationActions({ app, userRole, userId, setActionDialog }: A
                   noteLabel: 'Rejection Reason',
                   notePlaceholder: 'Clearly state why the application is being rejected...',
                   confirmAction: async (note) => { 
-                    await handleAction(() => rejectApp({ id: app.id, rejectionReason: note || '' }), 'Application rejected'); 
+                    await handleAction(() => rejectApp({ id: app.id, rejectionReason: note || '' })); 
                   }
                 })}
               >
@@ -146,7 +144,7 @@ export function ApplicationActions({ app, userRole, userId, setActionDialog }: A
                   noteLabel: 'Final Decision Notes',
                   notePlaceholder: 'Any final comments on this approval...',
                   confirmAction: async (note) => { 
-                    await handleAction(() => approveApp({ id: app.id, notes: note || '' }), 'Application approved successfully!'); 
+                    await handleAction(() => approveApp({ id: app.id, notes: note || '' })); 
                   }
                 })}
               >
@@ -177,7 +175,7 @@ export function ApplicationActions({ app, userRole, userId, setActionDialog }: A
                   description: 'Are you sure you want to submit this application? You will not be able to edit it once submitted.',
                   confirmText: 'Submit Application',
                   confirmAction: async () => { 
-                    await handleAction(() => submitApp(app.id), 'Application submitted successfully'); 
+                    await handleAction(() => submitApp(app.id)); 
                   }
                 })}
               >
@@ -203,7 +201,7 @@ export function ApplicationActions({ app, userRole, userId, setActionDialog }: A
                   description: 'Have you provided all the requested information and documents? This will send the application back for review.',
                   confirmText: 'Resubmit Application',
                   confirmAction: async () => { 
-                    await handleAction(() => resubmit(app.id), 'Application resubmitted successfully'); 
+                    await handleAction(() => resubmit(app.id)); 
                   }
                 })}
               >

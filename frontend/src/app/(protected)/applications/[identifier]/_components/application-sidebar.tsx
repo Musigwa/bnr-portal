@@ -17,7 +17,7 @@ export function ApplicationSidebar({ app, auditLogs, userRole }: ApplicationSide
       {/* Sidebars for STAFF ONLY */}
       {isInternal && (
         <Card className="border-border overflow-hidden">
-          <CardHeader className="bg-muted/30 border-b">
+          <CardHeader className="border-b">
             <CardTitle className="text-xl">Assignment</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -44,11 +44,11 @@ export function ApplicationSidebar({ app, auditLogs, userRole }: ApplicationSide
       )}
 
       <Card className="border-border overflow-hidden">
-        <CardHeader className="bg-muted/30 border-b flex flex-row items-center gap-2">
+        <CardHeader className="border-b flex flex-row items-center gap-2">
           <Clock className="h-5 w-5 text-muted-foreground" />
           <CardTitle className="text-xl">Audit History</CardTitle>
         </CardHeader>
-        <CardContent className="max-h-[558px] overflow-y-auto custom-scrollbar scroll-shadows">
+        <CardContent className="max-h-[558px] overflow-y-auto custom-scrollbar">
           <AuditTimeline logs={auditLogs || []} />
         </CardContent>
       </Card>

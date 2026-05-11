@@ -8,7 +8,7 @@ interface ApplicationDetailsCardProps {
 export function ApplicationDetailsCard({ app }: ApplicationDetailsCardProps) {
   return (
     <Card className="border-border overflow-hidden shadow-sm">
-      <CardHeader className="bg-muted/30 border-b">
+      <CardHeader className="border-b">
         <CardTitle className="text-xl">Application details</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-6 md:grid-cols-2">

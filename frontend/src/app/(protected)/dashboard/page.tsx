@@ -54,7 +54,7 @@ export default function DashboardPage() {
 
   // Cache state for seamless transitions
   const getInitialCounts = () => {
-    return statsResponse || { total: 0, pending: 0, awaitingDecision: 0, decided: 0 };
+    return statsResponse || { total: 0, drafts: 0, submitted: 0, underReview: 0, pendingInfo: 0, reviewed: 0, approved: 0, rejected: 0 };
   };
 
   const [cachedCounts, setCachedCounts] = useState(getInitialCounts);
@@ -112,10 +112,15 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col space-y-6 md:h-[calc(100vh-180px)] md:overflow-hidden min-h-0">
+    <div className="flex flex-col space-y-6 md:h-[calc(100vh-180px)] md:overflow-hidden min-h-0 px-2 -mx-2 py-2 -my-2">
       <div className="shrink-0">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground mt-1 text-lg">
+              Overview of all <span className="font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md">{cachedCounts.total}</span> applications in the system.
+            </p>
+          </div>
           
           {/* Global Filter Icon Popover */}
           <FilterPopover

@@ -1,5 +1,3 @@
-'use client';
-
 export function Footer() {
   return (
     <footer className="sticky bottom-0 z-50 w-full border-t bg-card backdrop-blur-xl">

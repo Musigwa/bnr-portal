@@ -1,13 +1,15 @@
-import { Document } from '@/types';
-import { Download, File as FileIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Document } from '@/types';
+import { Download, Eye, File as FileIcon } from 'lucide-react';
 
 interface DocumentListProps {
   documents: Document[];
   onDownload?: (documentId: string, fileName: string) => void;
+  onPreview?: (documentId: string, fileName: string) => void;
+  downloadProgress?: Record<string, number>;
 }
 
-export function DocumentList({ documents, onDownload }: DocumentListProps) {
+export function DocumentList({ documents, onDownload, onPreview, downloadProgress = {} }: DocumentListProps) {
   if (!documents || documents.length === 0) {
     return (
       <div className="py-12 text-center bg-muted/20 rounded-2xl border-2 border-dashed border-border">
@@ -24,45 +26,75 @@ export function DocumentList({ documents, onDownload }: DocumentListProps) {
     <div className={`grid gap-6 ${
       documents.length === 1 ? 'grid-cols-1' : 
       documents.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 
-      'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+      'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3'
     }`}>
-      {documents.map((doc) => (
-        <div 
-          key={doc.id} 
-          className="group relative flex flex-col w-full h-48 border border-border rounded-2xl bg-card shadow-sm hover:shadow-2xl hover:border-primary/50 transition-all duration-500 overflow-hidden"
-        >
-          {/* Background Glow Effect on Hover */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          
-          {/* Top Section: Icon & Version */}
-          <div className="relative flex-1 flex items-center justify-center bg-muted/30 group-hover:bg-transparent transition-colors duration-500">
-            <div className="relative transform group-hover:scale-110 transition-transform duration-500">
-              <div className="p-5 bg-card rounded-2xl shadow-sm border border-border group-hover:border-primary/20 group-hover:shadow-md transition-all">
-                <FileIcon className="w-11 h-11 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-              <div className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-sm transform rotate-3">
-                {doc.fileName.split('.').pop()?.toUpperCase()}
-              </div>
-            </div>
+      {documents.map((doc) => {
+        const progress = downloadProgress[doc.id];
+        const isDownloading = progress !== undefined;
 
-            {doc.version > 1 && (
-              <div className="absolute top-3 left-3 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                V{doc.version}
-              </div>
-            )}
+        return (
+          <div 
+            key={doc.id} 
+            className="group relative flex flex-col w-full h-48 border border-border rounded-2xl bg-card shadow-sm hover:shadow-2xl hover:border-primary/50 transition-all duration-500 overflow-hidden cursor-pointer"
+            onClick={() => onPreview && onPreview(doc.id, doc.fileName)}
+          >
+            {/* Background Glow Effect on Hover */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             
-            {/* Hover Overlay Actions */}
-            <div className="absolute inset-0 bg-foreground/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
-              <Button 
-                variant="secondary" 
-                size="sm" 
-                className="rounded-full px-7 h-10 text-xs font-bold shadow-2xl translate-y-3 group-hover:translate-y-0 transition-all duration-300"
-                onClick={() => onDownload && onDownload(doc.id, doc.fileName)}
-              >
-                <Download className="h-4 w-4 mr-2" /> Download
-              </Button>
+            {/* Top Section: Icon & Version */}
+            <div className="relative flex-1 flex items-center justify-center bg-muted/30 group-hover:bg-transparent transition-colors duration-500">
+              <div className="relative transform group-hover:scale-110 transition-transform duration-500">
+                <div className="p-5 bg-card rounded-2xl shadow-sm border border-border group-hover:border-primary/20 group-hover:shadow-md transition-all">
+                  <FileIcon className="w-11 h-11 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+                <div className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-sm transform rotate-3">
+                  {doc.fileName.split('.').pop()?.toUpperCase()}
+                </div>
+              </div>
+
+              {doc.version > 1 && (
+                <div className="absolute top-3 left-3 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                  V{doc.version}
+                </div>
+              )}
+              
+              {/* Hover Overlay Actions */}
+              <div className={`absolute inset-0 bg-foreground/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 transition-all duration-300 ${isDownloading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                {isDownloading ? (
+                  <div className="flex flex-col items-center gap-2 w-3/4">
+                    <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                      <div className="h-full bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
+                    </div>
+                    <span className="text-xs font-bold text-white">{progress}%</span>
+                  </div>
+                ) : (
+                  <div className="flex gap-3">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="rounded-full px-5 h-10 text-xs font-bold shadow-2xl translate-y-3 group-hover:translate-y-0 transition-all duration-300 bg-white hover:bg-gray-100 text-black border-none"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPreview?.(doc.id, doc.fileName);
+                      }}
+                    >
+                      <Eye className="h-4 w-4 mr-2" /> Preview
+                    </Button>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="rounded-full px-5 h-10 text-xs font-bold shadow-2xl translate-y-3 group-hover:translate-y-0 transition-all duration-300"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDownload?.(doc.id, doc.fileName);
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" /> Download
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
           
           {/* Bottom Section: Info */}
           <div className="relative p-4 bg-card border-t border-border group-hover:bg-muted/30 transition-colors duration-500">
@@ -80,7 +112,8 @@ export function DocumentList({ documents, onDownload }: DocumentListProps) {
             </div>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

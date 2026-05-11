@@ -1,3 +1,5 @@
+"use client";
+
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -37,7 +39,7 @@ export function DataTable<T extends { id: string | number }>({
 }: DataTableProps<T>) {
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const isTailwindClass = maxHeight && (maxHeight.startsWith('max-h-') || maxHeight === 'flex-1');
-  const heightLimitClass = isTailwindClass ? maxHeight : (maxHeight ? "" : "max-h-[var(--table-max-height,600px)]");
+  const heightLimitClass = isTailwindClass ? maxHeight : (maxHeight ? "" : "max-h-[var(--table-max-height,715px)]");
 
   const hasActiveFilters = activeFilters !== undefined &&
     Object.values(activeFilters).some(v => v && v !== '' && v !== 'all');

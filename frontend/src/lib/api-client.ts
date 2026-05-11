@@ -148,7 +148,7 @@ export const apiClient = {
   delete: <T>(endpoint: string) => request<T>(endpoint, { method: 'DELETE' }),
   upload: <T>(endpoint: string, formData: FormData) =>
     request<T>(endpoint, { method: 'POST', body: formData }),
-  download: async (endpoint: string): Promise<Blob> => {
+  download: async (endpoint: string, onProgress?: (progress: number) => void): Promise<Blob> => {
     // We cannot use the standard request() wrapper because it enforces res.json()
     // We manually fetch the token and return the blob directly.
     const token = await getValidToken().catch(() => null);
@@ -157,6 +157,29 @@ export const apiClient = {
     
     const res = await fetch(`${API_URL}${endpoint}`, { headers });
     if (!res.ok) throw new Error('Failed to download file');
+
+    if (onProgress && res.body) {
+      const contentLength = res.headers.get('content-length');
+      const total = contentLength ? parseInt(contentLength, 10) : 0;
+      
+      const reader = res.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let receivedLength = 0;
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          chunks.push(value);
+          receivedLength += value.length;
+          if (total) {
+            onProgress(Math.round((receivedLength / total) * 100));
+          }
+        }
+      }
+      return new Blob(chunks as BlobPart[], { type: res.headers.get('content-type') || 'application/octet-stream' });
+    }
+
     return res.blob();
   },
 };

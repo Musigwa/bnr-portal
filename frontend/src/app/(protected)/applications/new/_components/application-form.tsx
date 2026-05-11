@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { notify } from '@/lib/notifications';
 import { Label } from '@/components/ui/label';
 import { apiClient } from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
@@ -31,8 +30,7 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
   const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
   const [existingDocs, setExistingDocs] = useState(initialData?.documents || []);
-  const [submissionError, setSubmissionError] = useState<string | null>(null);
-
+  
   const methods = useForm<FormValues>({
     mode: 'all',
     resolver: zodResolver(formSchema),
@@ -55,17 +53,16 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
   const { mutateAsync: deleteDoc } = useDeleteDocument();
 
   const handleFormSubmit = async (data: FormValues, shouldSubmit = false) => {
-    setSubmissionError(null);
     setIsLoading(true);
     try {
       let currentAppId = applicationId;
       let currentRefNumber = initialData?.refNumber;
 
       if (currentAppId) {
-        const res = await updateApp({ id: currentAppId, data });
+        const res = await updateApp({ id: currentAppId, data, suppressNotification: shouldSubmit });
         currentRefNumber = res.refNumber;
       } else {
-        const res = await createDraft(data);
+        const res = await createDraft({ ...data, suppressNotification: shouldSubmit });
         currentAppId = res.id;
         currentRefNumber = res.refNumber;
       }
@@ -81,21 +78,15 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
       if (shouldSubmit) {
         if (initialData?.status === ApplicationStatus.PENDING_INFO) {
           await resubmitApp(currentAppId!);
-          notify.success('Application resubmitted successfully!');
         } else {
           await submitApp(currentAppId!);
-          notify.success('Application submitted successfully!');
         }
         router.push('/applications');
       } else {
-        notify.success('Application saved as draft');
         router.push(`/applications/${currentRefNumber}`);
       }
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      const msg = err.message || 'An error occurred during submission.';
-      setSubmissionError(msg);
-      notify.error(msg);
+    } catch {
+      // Handled globally by API hooks
     } finally {
       setIsLoading(false);
     }
@@ -160,12 +151,6 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
           </CardHeader>
           <CardContent className="pt-6 space-y-6">
             
-            {submissionError && (
-              <Alert variant="destructive">
-                <AlertDescription>{submissionError}</AlertDescription>
-              </Alert>
-            )}
-
             {Object.keys(errors).length > 0 && (
               <Alert variant="destructive" className="bg-destructive/10 border-destructive/20">
                 <AlertCircle className="h-4 w-4 text-destructive" />

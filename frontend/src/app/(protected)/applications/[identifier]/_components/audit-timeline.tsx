@@ -41,7 +41,7 @@ export function AuditTimeline({ logs }: AuditTimelineProps) {
       {logs.map((log) => (
         <div key={log.id} className="relative pl-6">
           {/* Timeline Dot/Icon */}
-          <div className="absolute -left-[10px] top-1 bg-background p-0.5 rounded-full z-10">
+          <div className="absolute -left-[10px] top-1 bg-card p-0.5 rounded-full z-10">
             {getIcon(log.statusAfter)}
           </div>
           
@@ -72,11 +72,15 @@ export function AuditTimeline({ logs }: AuditTimelineProps) {
             {log.metadata && Object.keys(log.metadata).length > 0 && (
               <div className="mt-2.5 space-y-1.5">
                 {Object.entries(log.metadata).map(([key, value]) => {
-                  const label = key
+                  let label = key
                     .replace(/([A-Z])/g, ' $1')
                     .replace(/^./, str => str.toUpperCase())
-                    .replace('Notes', ' Notes')
-                    .replace('Reason', ' Reason');
+                    .trim();
+                  
+                  if (label.toLowerCase() === 'notes') {
+                    const rolePrefix = log.actor?.role || 'Applicant';
+                    label = `${rolePrefix} Notes`;
+                  }
                   
                   return (
                     <div key={key} className="bg-muted/30 p-2.5 rounded-lg border border-border/50 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
@@ -95,7 +99,7 @@ export function AuditTimeline({ logs }: AuditTimelineProps) {
 
       {/* End of history marker */}
       <div className="relative pl-6 pt-2">
-        <div className="absolute -left-[10px] top-3 bg-background p-0.5 rounded-full z-10">
+        <div className="absolute -left-[10px] top-3 bg-card p-0.5 rounded-full z-10">
           <ShieldCheck className="h-4 w-4 text-muted-foreground/40" />
         </div>
         <div className="flex flex-col">

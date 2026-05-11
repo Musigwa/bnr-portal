@@ -141,6 +141,34 @@ export class DocumentsService {
     return doc;
   }
 
+  async getDocumentsForArchive(applicationId: string, user: User) {
+    const app = await this.prisma.application.findFirst({
+      where: {
+        OR: [{ id: applicationId }, { refNumber: applicationId }],
+      },
+    });
+
+    if (!app) throw new NotFoundException('Application not found');
+
+    if (user.role === Role.APPLICANT && app.applicantId !== user.id) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    const documents = await this.prisma.document.findMany({
+      where: {
+        applicationId: app.id,
+        isSuperseded: false,
+      },
+      orderBy: { fileName: 'asc' },
+    });
+
+    if (documents.length === 0) {
+      throw new NotFoundException('No documents found for this application');
+    }
+
+    return { app, documents };
+  }
+
   async delete(applicationId: string, documentId: string, user: User) {
     const app = await this.prisma.application.findFirst({
       where: {

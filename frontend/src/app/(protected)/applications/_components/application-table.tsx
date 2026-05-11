@@ -58,10 +58,6 @@ export function ApplicationTable({
     }
   };
 
-  const navigateToApplication = (refNumber: string) => {
-    router.push(`/applications/${refNumber}`);
-  };
-
   const columns = useApplicationColumns({
     role,
     onAssign,
@@ -71,12 +67,16 @@ export function ApplicationTable({
     getActionLabel,
   });
 
+  const onRowClick = (app: Application) => {
+    router.push(`/applications/${app.refNumber}`);
+  };
+
 
   return (
     <DataTable
       data={applications}
       columns={columns}
-      onRowClick={(app) => navigateToApplication(app.refNumber)}
+      onRowClick={onRowClick}
       isLoading={isLoading}
 
       // Inline column filter props

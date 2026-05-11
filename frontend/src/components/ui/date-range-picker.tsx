@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import * as React from "react"
 import { Calendar, ChevronLeft, ChevronRight, X } from "lucide-react"
@@ -192,8 +192,8 @@ export function DateRangeCalendar({
       (!isCurrentMonth || isFuture) && "text-muted-foreground/30 pointer-events-none",
       isCurrentMonth && !isFuture && !isStart && !isEnd && !inRange && "text-foreground hover:bg-muted hover:border-border",
       isToday && !isStart && !isEnd && "border-primary/55 font-semibold text-primary",
-      inRange && "bg-primary/10 text-primary-foreground dark:text-foreground",
-      isRangeMiddle && "hover:bg-primary/20",
+      inRange && "bg-primary/10",
+      isRangeMiddle && "text-primary dark:text-foreground hover:bg-primary/20",
       isStart && "bg-primary text-primary-foreground rounded-l-md font-semibold select-none",
       isEnd && "bg-primary text-primary-foreground rounded-r-md font-semibold select-none",
       isStart && !nEnd && !nHover && "rounded-md"
