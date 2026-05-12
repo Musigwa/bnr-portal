@@ -91,6 +91,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             cd /opt/deploy/${{ inputs.project_name }}
             chmod +x .github/scripts/deploy.sh
             ./.github/scripts/deploy.sh ${{ inputs.service_name }} ${{ github.sha }} ${{ github.event.repository.name }}
