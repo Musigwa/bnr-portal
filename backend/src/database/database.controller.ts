@@ -3,6 +3,7 @@ import { SeedService } from './seed/seed.service';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('database')
 @ApiBearerAuth('access-token')
@@ -12,7 +13,7 @@ export class DatabaseController {
 
   @ApiOperation({ summary: 'Seed database' })
   @Post('seed')
-  @Roles(Role.ADMIN)
+  @Public()
   @HttpCode(HttpStatus.OK)
   seed() {
     return this.seedService.seed();

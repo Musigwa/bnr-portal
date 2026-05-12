@@ -1,25 +1,27 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ApplicationStatus, Prisma } from '@prisma/client';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { ApplicationStatus, Prisma, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma.service';
 import { SEED_APPLICATIONS, SEED_USERS } from './seed.data';
 
 @Injectable()
-export class SeedService implements OnModuleInit {
+export class SeedService implements OnApplicationBootstrap {
   private readonly logger = new Logger(SeedService.name);
 
   constructor(private prisma: PrismaService) {}
 
-  async onModuleInit() {
+  async onApplicationBootstrap() {
     if (process.env.NODE_ENV === 'development') {
       await this.seed();
     }
   }
 
   async seed(): Promise<{ message: string; seeded: boolean }> {
-    const alreadySeeded = await this.prisma.user.count();
-    if (alreadySeeded > 0) {
-      this.logger.log('Database already seeded — skipping');
+    const adminExists = await this.prisma.user.count({
+      where: { role: Role.ADMIN },
+    });
+    if (adminExists > 0) {
+      this.logger.log('Database already has an admin — skipping seed');
       return { message: 'Already seeded', seeded: false };
     }
 
