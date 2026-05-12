@@ -68,6 +68,9 @@ describe('Concurrency — simultaneous approval', () => {
 
         return fn(mockTx);
       }),
+      $extends: jest
+        .fn()
+        .mockReturnValue({ application: { create: jest.fn() } }),
     };
 
     const mockAudit = {

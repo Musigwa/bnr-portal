@@ -10,7 +10,14 @@ describe('ApplicationsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ApplicationsService,
-        { provide: PrismaService, useValue: {} },
+        {
+          provide: PrismaService,
+          useValue: {
+            $extends: jest
+              .fn()
+              .mockReturnValue({ application: { create: jest.fn() } }),
+          },
+        },
         { provide: AuditService, useValue: {} },
       ],
     }).compile();
