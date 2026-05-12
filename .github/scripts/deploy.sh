@@ -93,7 +93,7 @@ else
   # Write to a temp file first
   cat <<EOF > /tmp/caddy_temp
 $DOMAIN {
-    reverse_proxy localhost:$NEW_PORT
+    reverse_proxy $NEW_CONTAINER:$CONTAINER_PORT
 }
 EOF
 
