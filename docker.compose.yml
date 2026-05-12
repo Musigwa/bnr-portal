@@ -85,6 +85,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     env_file:
       - .env.development
     ports:
@@ -93,7 +95,7 @@ services:
     environment:
       - NODE_ENV=development
     # Your browser accesses the backend from the host (Mac), so we use localhost:${BACKEND_PORT}.
-      - NEXT_PUBLIC_API_URL=http://localhost:${BACKEND_PORT}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     depends_on:
       - backend-dev
     networks:
