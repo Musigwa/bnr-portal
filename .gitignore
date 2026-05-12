@@ -4,3 +4,4 @@ uploads
 
 # Environment variables
 .env.*
+!.env.example

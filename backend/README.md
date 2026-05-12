@@ -22,8 +22,8 @@ A full-stack portal for the National Bank of Rwanda to manage bank licensing app
 docker compose up --build
 ```
 
-- API: http://localhost:3001/api
-- Swagger docs: http://localhost:3001/api/docs
+- API: http://localhost:3001
+- Swagger docs: http://localhost:3001/docs
 - Frontend: http://localhost:3000
 
 ### Run locally
@@ -54,7 +54,7 @@ The database seeds automatically on first startup in development.
 Alternatively, call the seed endpoint as ADMIN:
 
 ```bash
-POST /api/database/seed
+POST /database/seed
 Authorization: Bearer <admin_token>
 ```
 
@@ -82,7 +82,7 @@ pnpm test
 
 ## API Documentation
 
-Full interactive docs available at `/api/docs` (Swagger UI) when the server is running.
+Full interactive docs available at `/docs` (Swagger UI) when the server is running.
 
 ## Environment Variables
 
