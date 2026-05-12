@@ -76,7 +76,7 @@ fi
 echo "✅ New container $NEW_CONTAINER is running on port $NEW_PORT"
 
 echo "🔍 Waiting for new container to become healthy..."
-for i in {1..10}; do
+for i in {1..30}; do
   STATUS=$(docker inspect -f '{{.State.Health.Status}}' $NEW_CONTAINER)
   if [ "$STATUS" = "healthy" ]; then
     echo "✅ Container is healthy!"
@@ -84,7 +84,7 @@ for i in {1..10}; do
   fi
   echo "⏳ Current status: $STATUS. Waiting..."
   sleep 3
-  if [ $i -eq 10 ]; then
+  if [ $i -eq 30 ]; then
     echo "❌ Container failed health check!"
     exit 1
   fi
