@@ -1,0 +1,66 @@
+name: Deploy Monorepo
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'docker.compose.yml'
+      - '.github/workflows/**'
+      - '.github/scripts/**'
+      - '!**.md'
+      - '!**/.gitignore'
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'docker.compose.yml'
+              - '.github/**'
+            frontend:
+              - 'frontend/**'
+              - 'docker.compose.yml'
+              - '.github/**'
+
+  deploy-backend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      service_name: backend
+      context: ./backend
+      image_name: ${{ github.repository }}-backend
+      project_name: ${{ github.event.repository.name }}
+    secrets: inherit
+
+  deploy-frontend:
+    needs: [detect-changes, deploy-backend]
+    # Run if frontend changed AND (backend succeeded OR backend was skipped)
+    if: |
+      always() && 
+      needs.detect-changes.outputs.frontend == 'true' && 
+      (needs.deploy-backend.result == 'success' || needs.deploy-backend.result == 'skipped')
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      service_name: frontend
+      context: ./frontend
+      image_name: ${{ github.repository }}-frontend
+      project_name: ${{ github.event.repository.name }}
+    secrets: inherit
