@@ -64,21 +64,20 @@ services:
       - .env.${NODE_ENV}
     ports:
     # Production apps use dynamic host ports (0) to avoid conflicts and enable Zero Downtime (Blue/Green friendly)!
-      - "0:${PORT}"
+      - "0:${BACKEND_PORT}"
     environment:
       - NODE_ENV=production
       - DB_HOST=postgres
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - PORT=3001
     depends_on:
       - postgres
     networks:
       - bnr_network
       - observability-network
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"require('http').request({ host: 'localhost', port: process.env.PORT, path: '/health/liveness', timeout: 2000 }, (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1)).end()\""]
+      test: ["CMD-SHELL", "node -e \"require('http').request({ host: 'localhost', port: process.env.BACKEND_PORT, path: '/health/liveness', timeout: 2000 }, (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1)).end()\""]
       interval: 5s
       timeout: 2s
       retries: 3
@@ -117,10 +116,11 @@ services:
       - .env.${NODE_ENV}
     ports:
     # Production apps use dynamic host ports (0) to avoid conflicts and enable Zero Downtime (Blue/Green friendly)!
-      - "0:${PORT}"
+      - "0:${NEXT_FRONTEND_PORT}"
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - PORT=${NEXT_FRONTEND_PORT}
     depends_on:
       - backend
     networks:
