@@ -62,6 +62,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Generate .env file
+        env:
+          SECRETS_JSON: ${{ toJSON(secrets) }}
+          TARGET_ENV: production
+          APP_NAME: ${{ inputs.project_name }}
+        run: |
+          chmod +x .github/scripts/generate-env.sh
+          ./.github/scripts/generate-env.sh
+
       - name: Copy deploy script to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -69,7 +78,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: ".github/scripts/deploy.sh,docker.compose.yml"
+          source: ".github/scripts/deploy.sh,docker.compose.yml,.env.production"
           target: "/opt/deploy/${{ inputs.project_name }}"
           strip_components: 0
 

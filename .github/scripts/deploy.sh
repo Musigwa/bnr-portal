@@ -20,14 +20,20 @@ echo "🚀 Deploying $SERVICE with tag $TAG..."
 export IMAGE_TAG=$TAG
 export GITHUB_REPOSITORY_OWNER=${GITHUB_REPOSITORY_OWNER:-musigwa}
 
+ENV_FILE=""
+if [ -f ".env.production" ]; then
+  ENV_FILE="--env-file .env.production"
+  echo "ℹ️ Using .env.production file"
+fi
+
 # 1. Pull the new image
-docker compose -f docker.compose.yml --profile production pull $SERVICE
+docker compose -f docker.compose.yml $ENV_FILE --profile production pull $SERVICE
 
 # 2. Find the ID of the currently running container (Old)
 OLD_CONTAINER=$(docker ps --filter "label=com.docker.compose.service=$SERVICE" --filter "status=running" -q | head -n 1)
 
 # 3. Scale up to 2 instances (starts the new one without stopping the old one)
-docker compose -f docker.compose.yml --profile production up -d --no-deps --scale $SERVICE=2
+docker compose -f docker.compose.yml $ENV_FILE --profile production up -d --no-deps --scale $SERVICE=2
 
 # 4. Find the NEW container (the one that is NOT the old one)
 ALL_CONTAINERS=$(docker ps --filter "label=com.docker.compose.service=$SERVICE" --filter "status=running" -q)
