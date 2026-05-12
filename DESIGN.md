@@ -7,7 +7,7 @@
 The system is a monorepo with two independently deployable services:
 
 - **Backend**: NestJS REST API, PostgreSQL via Prisma ORM, JWT authentication
-- **Frontend**: Next.js 14 App Router, Tailwind CSS, shadcn/ui
+- **Frontend**: Next.js App Router, Tailwind CSS, shadcn/ui
 
 ### Why NestJS
 
@@ -112,13 +112,28 @@ When a document with the same filename is uploaded, the previous version is mark
 
 ---
 
-## 6. What I Would Add With More Time
+## 6. Production-Ready Vision & Roadmap
 
-- Email notifications on state transitions
-- Field-level encryption for sensitive financial data
-- Proper object storage (S3/MinIO) instead of local filesystem
-- Pagination on all list endpoints
-- More granular permissions (e.g. REVIEWER can only see applications in their region)
-- Token blacklisting for immediate access token revocation on logout
-- Integration tests against a real test database
-- CI/CD pipeline with automated test runs
+While not implemented in this current version due to time constraints, the following architectural enhancements reflect our vision and intention for an industrial-grade, scalable production platform:
+
+### 6.1 Infrastructure & Deployment (High Priority)
+
+- **Multi-Stage Docker Builds**: Optimize Dockerfiles to separate build dependencies from runtime, drastically reducing image sizes.
+- **Next.js Standalone Output**: Configure `next.config.js` with `output: 'standalone'` to produce a minimal production bundle without needing `node_modules` in the final image.
+- **Object Storage**: Migrate from local filesystem storage to AWS S3 or MinIO, utilizing pre-signed URLs for secure document uploads and downloads.
+
+### 6.2 Security & Compliance
+
+- **Field-Level Encryption**: Implement encryption at rest for sensitive financial data (e.g., proposed capital, registration numbers) using Prisma middleware or native database encryption.
+- **Token Blacklisting**: Use Redis to store revoked tokens for immediate access token invalidation on logout.
+- **Granular Permissions (ABAC)**: Transition from simple Role-Based Access Control (RBAC) to Attribute-Based Access Control (ABAC) to allow policies like "Reviewer can only see applications in their assigned region".
+
+### 6.3 Performance & Scalability
+
+- **Pagination**: Implement cursor-based pagination on all list endpoints (Applications, Audit Logs) to prevent performance degradation as data grows.
+- **Asynchronous Processing**: Offload non-blocking tasks like email notifications to a message queue (e.g., BullMQ with Redis).
+
+### 6.4 Observability & Testing
+
+- **Integration Testing**: Implement a dedicated test database (or use Testcontainers) to run end-to-end integration tests in CI.
+- **OpenTelemetry**: Integrate tracing and metrics to monitor system health and API latency in production.
