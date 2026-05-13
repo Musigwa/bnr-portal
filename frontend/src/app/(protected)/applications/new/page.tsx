@@ -11,9 +11,9 @@ import { FieldErrors, ResolverResult, useForm, useWatch } from 'react-hook-form'
 import * as z from 'zod';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Check, Loader2, Upload } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
 
 const formSchema = z.object({
   institutionName: z.string().min(1, 'Institution name is required'),
@@ -25,28 +25,20 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const steps = [
-  { id: 1, title: 'Institution Details' },
-  { id: 2, title: 'Capital & Notes' },
-  { id: 3, title: 'Document Upload' },
-  { id: 4, title: 'Review & Submit' },
-];
-
 export default function NewApplicationPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [applicationId, setApplicationId] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   const {
     register,
     setValue,
-    getValues,
     control,
-    formState: { errors },
+    handleSubmit,
+    formState: { errors, isValid },
   } = useForm<FormValues>({
+    mode: 'onChange',
     resolver: async (values) => {
       const result = formSchema.safeParse(values);
       if (result.success) {
@@ -68,18 +60,18 @@ export default function NewApplicationPage() {
       institutionName: '',
       institutionType: '',
       registrationNumber: '',
-      proposedCapital: 0,
+      proposedCapital: undefined as unknown as number,
       applicantNotes: '',
     },
   });
 
   const institutionType = useWatch({ control, name: 'institutionType' });
 
-  // Mutation to create or update draft
-  const saveDraftMutation = useMutation({
+  // Full submission sequence: Create Draft -> Upload Docs -> Submit
+  const submitApplicationMutation = useMutation({
     mutationFn: async (data: FormValues) => {
+      // 1. Clean data and create application draft
       const cleanedData: Partial<FormValues> = { ...data };
-      // Ensure proposedCapital is a valid number or remove it if it's NaN/empty
       const capital = Number(cleanedData.proposedCapital);
       if (isNaN(capital)) {
         delete cleanedData.proposedCapital;
@@ -87,43 +79,35 @@ export default function NewApplicationPage() {
         cleanedData.proposedCapital = capital;
       }
       
-      if (applicationId) {
-        return apiClient.patch(`/applications/${applicationId}`, cleanedData);
-      } else {
-        const res = await apiClient.post<{ id: string }>('/applications', cleanedData);
-        setApplicationId(res.id);
-        return res;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-    },
-  });
+      const res = await apiClient.post<{ id: string }>('/applications', cleanedData);
+      const appId = res.id;
 
-  // Mutation to submit application
-  const submitMutation = useMutation({
-    mutationFn: () => apiClient.post(`/applications/${applicationId}/submit`),
+      // 2. Upload files if any exist
+      if (files.length > 0) {
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append('file', file);
+          await apiClient.upload(`/applications/${appId}/documents`, formData);
+        }
+      }
+
+      // 3. Submit application
+      await apiClient.post(`/applications/${appId}/submit`);
+      
+      return appId;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
       router.push('/applications');
     },
+    onError: (error: unknown) => {
+      setSubmissionError((error as { message: string }).message || 'An error occurred during submission. Please try again.');
+    }
   });
 
-  const handleNext = async () => {
-    // Save draft on step navigation
-    if (currentStep === 1 || currentStep === 2) {
-      try {
-        await saveDraftMutation.mutateAsync(getValues());
-      } catch (error: unknown) {
-        console.error('Failed to save draft', error instanceof Error ? error.message : error);
-        return; // Don't proceed if save fails
-      }
-    }
-    setCurrentStep((prev) => Math.min(prev + 1, 4));
-  };
-
-  const handleBack = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
+  const onSubmit = (data: FormValues) => {
+    setSubmissionError(null);
+    submitApplicationMutation.mutate(data);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,274 +143,218 @@ export default function NewApplicationPage() {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const uploadFiles = async () => {
-    if (!applicationId || files.length === 0) return;
-    setIsUploading(true);
-    try {
-      for (const file of files) {
-        const formData = new FormData();
-        formData.append('file', file);
-        await apiClient.upload(`/applications/${applicationId}/documents`, formData);
-      }
-      alert('Files uploaded successfully!');
-      setFiles([]);
-    } catch (error) {
-      console.error('Upload failed', error);
-      alert('Failed to upload some files.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const onSubmit = () => {
-    submitMutation.mutate();
-  };
-
   return (
-    <div className="container mx-auto py-10 space-y-8 max-w-4xl">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">New Application</h1>
-        <p className="text-muted-foreground">
-          Complete the steps below to apply for a bank license.
+    <div className="max-w-4xl mx-auto pt-2 pb-12">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">New Application</h1>
+        <p className="text-muted-foreground mt-1">
+          Complete the form below to submit a new bank licensing application. Ensure all details are accurate before submission.
         </p>
       </div>
 
-      {/* Step Indicator */}
-      <div className="flex items-center justify-between border-b pb-4">
-        {steps.map((step) => (
-          <div key={step.id} className="flex items-center space-x-2">
-            <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
-                currentStep >= step.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground'
-              }`}
-            >
-              {currentStep > step.id ? <Check className="h-4 w-4" /> : step.id}
-            </div>
-            <span
-              className={`text-sm font-medium ${
-                currentStep >= step.id ? 'text-foreground' : 'text-muted-foreground'
-              }`}
-            >
-              {step.title}
-            </span>
-            {step.id < 4 && <div className="h-px w-10 bg-muted" />}
-          </div>
-        ))}
-      </div>
+      <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }}>
+        <Card className="shadow-md border-slate-200">
+          <CardHeader className="bg-slate-50/50 border-b pb-4 pt-5">
+            <CardTitle className="text-xl">Application Form</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-6">
+            
+            {submissionError && (
+              <Alert variant="destructive">
+                <AlertDescription>{submissionError}</AlertDescription>
+              </Alert>
+            )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{steps[currentStep - 1].title}</CardTitle>
-          <CardDescription>
-            {currentStep === 1 && 'Enter the details of the institution.'}
-            {currentStep === 2 && 'Enter financial details and notes.'}
-            {currentStep === 3 && 'Upload required documents (Max 5MB per file).'}
-            {currentStep === 4 && 'Review all details before submitting.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* Step 1: Institution Details */}
-          {currentStep === 1 && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="institutionName">Institution Name</Label>
-                <Input
-                  id="institutionName"
-                  placeholder="e.g. Kigali Commercial Bank"
-                  {...register('institutionName')}
-                  className={errors.institutionName ? 'border-red-500' : ''}
-                />
-                {errors.institutionName && (
-                  <p className="text-sm text-red-500">{errors.institutionName.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="institutionType">Institution Type</Label>
-                <Select
-                  onValueChange={(value) => setValue('institutionType', value ?? '')}
-                  value={institutionType ?? undefined}
-                >
-                  <SelectTrigger className={errors.institutionType ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="COMMERCIAL_BANK">Commercial Bank</SelectItem>
-                    <SelectItem value="MICROFINANCE">Microfinance</SelectItem>
-                    <SelectItem value="DIGITAL_BANK">Digital Bank</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.institutionType && (
-                  <p className="text-sm text-red-500">{errors.institutionType.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="registrationNumber">Registration Number</Label>
-                <Input
-                  id="registrationNumber"
-                  placeholder="e.g. RDB-2026-001"
-                  {...register('registrationNumber')}
-                  className={errors.registrationNumber ? 'border-red-500' : ''}
-                />
-                {errors.registrationNumber && (
-                  <p className="text-sm text-red-500">{errors.registrationNumber.message}</p>
-                )}
+            {/* Section 1: Institution Details */}
+            <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="institutionName" className="text-slate-700">Institution Name <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="institutionName"
+                    placeholder="e.g. Kigali Commercial Bank"
+                    {...register('institutionName')}
+                    className={errors.institutionName ? 'border-red-500 bg-red-50/50' : ''}
+                  />
+                  {errors.institutionName && (
+                    <p className="text-sm text-red-500 font-medium">{errors.institutionName.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="institutionType" className="text-slate-700">Institution Type <span className="text-red-500">*</span></Label>
+                  <Select
+                    onValueChange={(value) => setValue('institutionType', value ?? '')}
+                    value={institutionType ?? undefined}
+                  >
+                    <SelectTrigger className={errors.institutionType ? 'border-red-500 bg-red-50/50' : ''}>
+                      <SelectValue placeholder="Select institution type" />
+                    </SelectTrigger>
+                    <SelectContent sideOffset={4}>
+                      <SelectItem value="COMMERCIAL_BANK">Commercial Bank</SelectItem>
+                      <SelectItem value="MICROFINANCE">Microfinance</SelectItem>
+                      <SelectItem value="DIGITAL_BANK">Digital Bank</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.institutionType && (
+                    <p className="text-sm text-red-500 font-medium">{errors.institutionType.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="registrationNumber" className="text-slate-700">Registration Number <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="registrationNumber"
+                    placeholder="e.g. RDB-2026-001"
+                    {...register('registrationNumber')}
+                    className={errors.registrationNumber ? 'border-red-500 bg-red-50/50' : ''}
+                  />
+                  {errors.registrationNumber && (
+                    <p className="text-sm text-red-500 font-medium">{errors.registrationNumber.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proposedCapital" className="text-slate-700">Proposed Capital (RWF) <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="proposedCapital"
+                    type="number"
+                    placeholder="e.g. 5000000"
+                    {...register('proposedCapital', { valueAsNumber: true })}
+                    className={errors.proposedCapital ? 'border-red-500 bg-red-50/50' : ''}
+                  />
+                  {errors.proposedCapital && (
+                    <p className="text-sm text-red-500 font-medium">{errors.proposedCapital.message}</p>
+                  )}
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Step 2: Capital & Notes */}
-          {currentStep === 2 && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="proposedCapital">Proposed Capital (RWF)</Label>
-                <Input
-                  id="proposedCapital"
-                  type="number"
-                  placeholder="e.g. 5000000"
-                  {...register('proposedCapital', { valueAsNumber: true })}
-                  className={errors.proposedCapital ? 'border-red-500' : ''}
-                />
-                {errors.proposedCapital && (
-                  <p className="text-sm text-red-500">{errors.proposedCapital.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="applicantNotes">Applicant Notes</Label>
+            {/* Section 2: Notes & Documents */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Applicant Notes */}
+              <div className="flex flex-col space-y-2">
+                <Label htmlFor="applicantNotes" className="text-slate-700">Applicant Notes (Optional)</Label>
                 <textarea
                   id="applicantNotes"
-                  placeholder="Add any additional notes here..."
+                  placeholder="Add any additional context or notes regarding this application..."
                   {...register('applicantNotes')}
-                  className={`flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-                    errors.applicantNotes ? 'border-red-500' : ''
+                  className={`flex-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-base shadow-sm placeholder:text-slate-400 hover:bg-slate-100 focus:bg-white focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-colors disabled:cursor-not-allowed disabled:opacity-50 resize-none ${
+                    errors.applicantNotes ? 'border-red-500 bg-red-50/50' : ''
                   }`}
                 />
                 {errors.applicantNotes && (
-                  <p className="text-sm text-red-500">{errors.applicantNotes.message}</p>
+                  <p className="text-sm text-red-500 font-medium">{errors.applicantNotes.message}</p>
                 )}
               </div>
-            </div>
-          )}
 
-          {/* Step 3: Document Upload */}
-          {currentStep === 3 && (
-            <div className="space-y-4">
-              <div
-                className="border-2 border-dashed rounded-lg p-6 text-center hover:bg-muted/50 transition-colors cursor-pointer"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={handleDrop}
-                onClick={() => document.getElementById('fileInput')?.click()}
+              {/* Document Upload */}
+              <div className="flex flex-col space-y-2">
+                <Label className="text-slate-700">Documents</Label>
+                <div
+                  className={`flex-1 flex flex-col border-2 border-dashed border-slate-300 rounded-xl p-5 hover:bg-slate-50 transition-colors cursor-pointer ${
+                    files.length === 0 ? 'items-center justify-center text-center' : ''
+                  }`}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={handleDrop}
+                  onClick={() => document.getElementById('fileInput')?.click()}
+                >
+                  {files.length === 0 ? (
+                    <>
+                      <Upload className="h-6 w-6 text-primary mb-2" />
+                      <p className="mt-1 text-sm font-medium text-slate-700">
+                        Drag and drop files here, or click to select
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Max file size: 5MB per document
+                      </p>
+                    </>
+                  ) : (
+                    <div className="w-full">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-sm font-semibold text-slate-700">Selected Files</span>
+                      </div>
+                      <div 
+                        className="w-full flex flex-wrap gap-3 cursor-default" 
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {files.map((file, index) => (
+                          <div key={index} className="relative group flex flex-col items-center justify-center w-28 h-28 border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden hover:border-primary transition-all">
+                            
+                            {/* Remove Button (appears on hover) */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeFile(index);
+                              }}
+                              className="absolute top-1 right-1 bg-white shadow-sm border text-red-500 hover:bg-red-50 hover:text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                            
+                            {/* File Icon Preview */}
+                            <div className="flex-1 flex items-center justify-center w-full bg-slate-50/50 group-hover:bg-primary/5 transition-colors">
+                              <svg className="w-8 h-8 text-slate-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                            </div>
+                            
+                            {/* Filename & Size */}
+                            <div className="w-full px-2 py-1.5 bg-white border-t border-slate-100 text-center">
+                              <p className="text-[11px] font-medium text-slate-700 truncate" title={file.name}>
+                                {file.name}
+                              </p>
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                {Math.round(file.size / 1024)} KB
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {/* Add More Card */}
+                        <div 
+                          className="flex flex-col items-center justify-center w-28 h-28 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 hover:bg-slate-100 hover:border-primary cursor-pointer transition-colors"
+                          onClick={() => document.getElementById('fileInput')?.click()}
+                        >
+                          <Upload className="h-5 w-5 text-slate-400 mb-1" />
+                          <span className="text-[11px] font-medium text-slate-500">Add More</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <input
+                    id="fileInput"
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </div>
+              </div>
+            </div>
+
+          </CardContent>
+          
+          <CardFooter className="flex items-center justify-center sm:justify-end bg-slate-50/50 border-t py-4 px-6 mt-2">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={submitApplicationMutation.isPending}
+                className="flex-1 sm:flex-none sm:w-24 shadow-sm"
               >
-                <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Drag and drop files here, or click to select
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Max file size: 5MB
-                </p>
-                <input
-                  id="fileInput"
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-              </div>
-
-              {files.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Selected Files</Label>
-                  <ul className="border rounded-md divide-y">
-                    {files.map((file, index) => (
-                      <li key={index} className="flex justify-between items-center p-2 text-sm">
-                        <span>{file.name} ({Math.round(file.size / 1024)} KB)</span>
-                        <Button variant="ghost" size="sm" onClick={() => removeFile(index)}>
-                          Remove
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    onClick={uploadFiles}
-                    disabled={isUploading || files.length === 0}
-                    className="w-full"
-                  >
-                    {isUploading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      'Upload Files'
-                    )}
-                  </Button>
-                </div>
-              )}
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submitApplicationMutation.isPending || !isValid}
+                className="flex-[2] sm:flex-none sm:px-8 shadow-sm font-semibold"
+              >
+                {submitApplicationMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {submitApplicationMutation.isPending ? 'Submitting...' : 'Submit Application'}
+              </Button>
             </div>
-          )}
-
-          {/* Step 4: Review & Submit */}
-          {currentStep === 4 && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Institution Name</p>
-                  <p className="font-medium">{getValues().institutionName}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Institution Type</p>
-                  <p className="font-medium capitalize">{getValues().institutionType?.toLowerCase().replace('_', ' ')}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Registration Number</p>
-                  <p className="font-medium">{getValues().registrationNumber}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Proposed Capital</p>
-                  <p className="font-medium">{getValues().proposedCapital} RWF</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-muted-foreground">Notes</p>
-                  <p className="font-medium">{getValues().applicantNotes || 'No notes provided'}</p>
-                </div>
-              </div>
-
-              {saveDraftMutation.isError && (
-                <Alert variant="destructive">
-                  <AlertDescription>
-                    Failed to save some details. Please ensure all steps are completed.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          )}
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            disabled={currentStep === 1 || submitMutation.isPending}
-          >
-            Back
-          </Button>
-          {currentStep < 4 ? (
-            <Button onClick={handleNext} disabled={saveDraftMutation.isPending}>
-              {saveDraftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Next
-            </Button>
-          ) : (
-            <Button
-              onClick={onSubmit}
-              disabled={submitMutation.isPending || !applicationId}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {submitMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Submit Application
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
+          </CardFooter>
+        </Card>
+      </form>
     </div>
   );
 }

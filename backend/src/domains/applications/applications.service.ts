@@ -64,7 +64,21 @@ export class ApplicationsService {
     });
   }
 
-  async findOne(id: string, user: User) {
+  private async resolveId(identifier: string): Promise<string> {
+    if (identifier.length === 36 && identifier.split('-').length === 5) {
+      return identifier; // It is likely a UUID
+    }
+    const app = await this.prisma.application.findUnique({
+      where: { refNumber: identifier },
+    });
+    if (!app) {
+      throw new NotFoundException('Application not found');
+    }
+    return app.id;
+  }
+
+  async findOne(identifier: string, user: User) {
+    const id = await this.resolveId(identifier);
     const app = await this.prisma.application.findUnique({
       where: { id },
       include: {
@@ -82,7 +96,8 @@ export class ApplicationsService {
     return app;
   }
 
-  async update(id: string, user: User, dto: UpdateApplicationDto) {
+  async update(identifier: string, user: User, dto: UpdateApplicationDto) {
+    const id = await this.resolveId(identifier);
     const app = await this.findOne(id, user);
 
     if (app.applicantId !== user.id)
@@ -94,7 +109,8 @@ export class ApplicationsService {
     return this.prisma.application.update({ where: { id }, data: dto });
   }
 
-  async submit(id: string, user: User) {
+  async submit(identifier: string, user: User) {
+    const id = await this.resolveId(identifier);
     return this.transition(id, user, 'SUBMIT', async (tx, app) => {
       if (app.applicantId !== user.id) {
         throw new ForbiddenException('Access denied');
@@ -110,7 +126,8 @@ export class ApplicationsService {
     });
   }
 
-  async assignReviewer(id: string, user: User) {
+  async assignReviewer(identifier: string, user: User) {
+    const id = await this.resolveId(identifier);
     return this.transition(id, user, 'ASSIGN_REVIEWER', async (tx, app) => {
       return tx.application.update({
         where: { id, version: app.version },
@@ -123,7 +140,8 @@ export class ApplicationsService {
     });
   }
 
-  async requestInfo(id: string, user: User, dto: RequestInfoDto) {
+  async requestInfo(identifier: string, user: User, dto: RequestInfoDto) {
+    const id = await this.resolveId(identifier);
     return this.transition(id, user, 'REQUEST_INFO', async (tx, app) => {
       this.assertAssignedReviewer(app, user);
       return tx.application.update({
@@ -137,7 +155,8 @@ export class ApplicationsService {
     });
   }
 
-  async completeReview(id: string, user: User, dto: CompleteReviewDto) {
+  async completeReview(identifier: string, user: User, dto: CompleteReviewDto) {
+    const id = await this.resolveId(identifier);
     return this.transition(id, user, 'COMPLETE_REVIEW', async (tx, app) => {
       this.assertAssignedReviewer(app, user);
       return tx.application.update({
@@ -151,7 +170,8 @@ export class ApplicationsService {
     });
   }
 
-  async resubmit(id: string, user: User) {
+  async resubmit(identifier: string, user: User) {
+    const id = await this.resolveId(identifier);
     return this.transition(id, user, 'RESUBMIT', async (tx, app) => {
       if (app.applicantId !== user.id)
         throw new ForbiddenException('Access denied');
@@ -165,7 +185,8 @@ export class ApplicationsService {
     });
   }
 
-  async approve(id: string, user: User) {
+  async approve(identifier: string, user: User) {
+    const id = await this.resolveId(identifier);
     return this.transition(id, user, 'APPROVE', async (tx, app) => {
       this.assertNotReviewer(app, user);
       return tx.application.update({
@@ -179,7 +200,8 @@ export class ApplicationsService {
     });
   }
 
-  async reject(id: string, user: User, dto: RejectDto) {
+  async reject(identifier: string, user: User, dto: RejectDto) {
+    const id = await this.resolveId(identifier);
     return this.transition(id, user, 'REJECT', async (tx, app) => {
       this.assertNotReviewer(app, user);
       return tx.application.update({
@@ -194,9 +216,10 @@ export class ApplicationsService {
     });
   }
 
-  async getAuditLog(id: string, user: User) {
+  async getAuditLog(identifier: string, user: User) {
     if (user.role === Role.APPLICANT)
       throw new ForbiddenException('Access denied');
+    const id = await this.resolveId(identifier);
     await this.findOne(id, user);
     return this.audit.getByApplication(id);
   }

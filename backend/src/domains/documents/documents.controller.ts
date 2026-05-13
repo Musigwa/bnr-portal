@@ -26,7 +26,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 
-@ApiTags('documents')
+@ApiTags('Documents')
 @ApiBearerAuth('access-token')
 @Controller('applications/:applicationId/documents')
 export class DocumentsController {

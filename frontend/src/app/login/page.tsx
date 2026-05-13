@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Landmark } from 'lucide-react';
 import { Role } from '@/types';
 import { apiClient } from '@/lib/api-client';
 
@@ -67,17 +68,22 @@ function LoginForm() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
+      <Card className="w-full max-w-[400px] shadow-lg border-0 ring-1 ring-slate-200">
+        <CardHeader className="space-y-2 pb-6 pt-8">
+          <div className="flex justify-center mb-4">
+            <div className="bg-primary/10 p-3 rounded-full">
+              <Landmark className="h-8 w-8 text-primary" />
+            </div>
+          </div>
           <CardTitle className="text-2xl font-bold tracking-tight text-center">
-            BNR Portal
+            Welcome to BNR Portal
           </CardTitle>
-          <CardDescription className="text-center">
+          <CardDescription className="text-center text-slate-500">
             Sign in to your account to continue
           </CardDescription>
         </CardHeader>
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             {apiError && (
               <Alert variant="destructive">
                 <AlertDescription>{apiError}</AlertDescription>
@@ -109,12 +115,13 @@ function LoginForm() {
                 <p className="text-sm text-red-500">{errors.password.message}</p>
               )}
             </div>
+            
+            <div className="pt-4">
+              <Button type="submit" className="w-full h-11 text-base font-medium" disabled={isLoading}>
+                {isLoading ? 'Signing in...' : 'Sign in'}
+              </Button>
+            </div>
           </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </CardFooter>
         </form>
       </Card>
     </div>
