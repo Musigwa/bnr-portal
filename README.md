@@ -12,62 +12,49 @@ This is a monorepo containing the full-stack application for the Bank Licensing 
 
 ### Environment Variables
 
-Before running the application (either via Docker or natively), you must create the appropriate `.env` file based on `.env.example`:
+The project uses a **Single Source of Truth** for environment variables. All variables are managed at the monorepo root. 
 
-- For development: Create `.env.development`
-- For production: Create `.env.production`
+1. Create your environment files from the example:
+   - For development: Create `.env.development`
+   - For production: Create `.env.production`
 
-Copy the example file and fill in the values:
+2. Copy the example file and fill in the values:
+   ```bash
+   cp .env.example .env.development
+   ```
 
-```bash
-cp .env.example .env.development
-```
+**Note:** You no longer need to copy `.env` files into the `frontend` or `backend` subdirectories for local development. The `dev` scripts are configured to load them from the root. For production builds and runtime (e.g., Docker), the environment is managed by the host/orchestrator.
 
 ### 1. Local Environment
 
-You can run the application locally in two ways:
-
 #### A. Using Docker (Recommended)
-
 Run the entire system (Database, Backend, and Frontend) using Docker Compose:
 
 ```bash
 NODE_ENV=development docker compose -f docker.compose.yml --env-file .env.development --profile development up backend-dev frontend-dev postgres --build
 ```
 
-The services will be available at:
-
-- **Frontend**: `http://localhost:${NEXT_FRONTEND_PORT}`
-- **Backend API**: `http://localhost:${BACKEND_PORT}`
-- **Swagger Docs**: `http://localhost:${BACKEND_PORT}/docs`
-
 #### B. Native Development
+This is the fastest way for rapid iteration. We use `pnpm` workspaces to manage both apps from the root.
 
-If you prefer to run services manually:
+1. **Install Dependencies:**
+   ```bash
+   pnpm install
+   ```
 
-**Prerequisites:**
+2. **Run Everything:**
+   From the root folder, run:
+   ```bash
+   pnpm dev
+   ```
+   *This will concurrently start the NestJS backend and Next.js frontend, injecting the root `.env.development` variables into both.*
 
-- **Node.js** (v18+)
-- **pnpm**
-- **Docker** (Optional, for quick database setup)
-- **PostgreSQL** (If running locally without Docker)
-
-**Backend:**
-
-```bash
-cd backend
-pnpm install
-pnpm prisma migrate dev
-pnpm dev
-```
-
-**Frontend:**
-
-```bash
-cd frontend
-pnpm install
-pnpm dev
-```
+3. **Database Setup:**
+   If you need to run Prisma migrations:
+   ```bash
+   cd backend
+   pnpm prisma migrate dev
+   ```
 
 ### 2. Production Environment
 
