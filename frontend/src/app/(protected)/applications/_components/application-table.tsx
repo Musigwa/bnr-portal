@@ -13,6 +13,7 @@ interface ApplicationTableProps {
   onAssign?: (id: string) => void;
   onApprove?: (id: string) => void;
   isActionLoading?: boolean;
+  isLoading?: boolean;
   
   // Pagination & Filtering Props
   currentPage: number;
@@ -46,7 +47,8 @@ export function ApplicationTable({
   onSearchChange,
   activeFilters,
   onFilterChange,
-  onClearFilters
+  onClearFilters,
+  isLoading
 }: ApplicationTableProps) {
   const router = useRouter();
   const isStaff = role !== Role.APPLICANT;
@@ -127,7 +129,7 @@ export function ApplicationTable({
             <Button 
               variant="outline" 
               size="sm"
-              className="!h-8 !py-0 text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 shadow-none"
+              className="!h-8 !py-0 text-green-600 dark:text-green-400 hover:bg-green-600/10 border-green-600/20 shadow-none"
               onClick={() => onApprove(app.id)}
               disabled={isActionLoading}
             >
@@ -174,13 +176,14 @@ export function ApplicationTable({
       data={applications}
       columns={columns}
       onRowClick={(app) => navigateToApplication(app.refNumber)}
+      isLoading={isLoading}
       
       // Toolbar props
       searchQuery={searchQuery}
       onSearchChange={onSearchChange}
       searchKey="institutionName"
       searchPlaceholder="Search applications by name..."
-      filters={isStaff ? filters : []}
+      filters={filters}
       activeFilters={activeFilters}
       onFilterChange={onFilterChange}
       onClear={onClearFilters}

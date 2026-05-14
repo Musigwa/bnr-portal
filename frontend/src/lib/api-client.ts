@@ -125,7 +125,7 @@ async function request<T>(
 }
 
 export const apiClient = {
-  get: <T>(endpoint: string, params?: Record<string, any>) => {
+  get: <T>(endpoint: string, params?: Record<string, string | number | boolean | undefined>) => {
     let url = endpoint;
     if (params) {
       const searchParams = new URLSearchParams();

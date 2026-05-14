@@ -9,7 +9,7 @@ export const APPLICATION_KEYS = {
   audit: (id: string) => [...APPLICATION_KEYS.details(id), 'audit'] as const,
 };
 
-export function useGetApplications(params: Record<string, any> = {}) {
+export function useGetApplications(params: Record<string, string | number | boolean | undefined> = {}) {
   return useQuery<{ data: Application[]; meta: { total: number; page: number; limit: number; totalPages: number } }>({
     queryKey: [...APPLICATION_KEYS.lists(), params],
     queryFn: () => apiClient.get('/applications', params),

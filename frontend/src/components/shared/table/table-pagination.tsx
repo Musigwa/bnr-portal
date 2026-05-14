@@ -20,9 +20,9 @@ export function DataTablePagination({
   onPageSizeChange,
 }: DataTablePaginationProps) {
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4 bg-slate-50/30 border-t border-slate-100">
+    <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4 bg-muted/10 border-t border-border">
       <div className="text-sm text-muted-foreground">
-        Showing <span className="font-medium text-slate-900">{(currentPage - 1) * pageSize + 1}</span> to <span className="font-medium text-slate-900">{Math.min(currentPage * pageSize, totalResults)}</span> of <span className="font-medium text-slate-900">{totalResults}</span> results
+        Showing <span className="font-medium text-foreground">{(currentPage - 1) * pageSize + 1}</span> to <span className="font-medium text-foreground">{Math.min(currentPage * pageSize, totalResults)}</span> of <span className="font-medium text-foreground">{totalResults}</span> results
       </div>
       
       <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
@@ -33,7 +33,7 @@ export function DataTablePagination({
             value={String(pageSize)}
             onValueChange={(val) => onPageSizeChange(Number(val))}
           >
-            <SelectTrigger size="sm" className="!h-8 w-[70px] !py-0 bg-white border-slate-200 text-xs focus:ring-1 focus:ring-primary/20 shadow-none">
+            <SelectTrigger size="sm" className="!h-8 w-[70px] !py-0 bg-card border-border text-xs focus:ring-1 focus:ring-primary/20 shadow-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -65,7 +65,7 @@ export function DataTablePagination({
                 if (!isNaN(p)) onPageChange(Math.min(totalPages, Math.max(1, p)));
               }
             }}
-            className="w-14 !h-8 !py-0 text-center bg-white border-slate-200 focus-visible:ring-1 focus-visible:ring-primary/20 shadow-none"
+            className="w-14 !h-8 !py-0 text-center bg-card border-border focus-visible:ring-1 focus-visible:ring-primary/20 shadow-none"
           />
         </div>
 
@@ -75,7 +75,7 @@ export function DataTablePagination({
             size="sm"
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="!h-8 !py-0 border-slate-200 bg-white shadow-none"
+            className="!h-8 !py-0 border-border bg-card shadow-none"
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Prev
@@ -88,7 +88,7 @@ export function DataTablePagination({
             size="sm"
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className="!h-8 !py-0 border-slate-200 bg-white shadow-none"
+            className="!h-8 !py-0 border-border bg-card shadow-none"
           >
             Next
             <ChevronRight className="h-4 w-4 ml-1" />

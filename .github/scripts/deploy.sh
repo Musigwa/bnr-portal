@@ -35,6 +35,14 @@ fi
 # 1. Pull the new image
 docker compose -f docker.compose.yml $ENV_FILE --profile production pull $SERVICE
 
+# 1.1 Run migrations (only for backend)
+if [ "$SERVICE" = "backend" ]; then
+  echo "🔄 Running database migrations..."
+  # Run a one-off container to apply migrations before starting the new app instances
+  docker compose -f docker.compose.yml $ENV_FILE --profile production run --rm $SERVICE npm run migration:deploy
+  echo "✅ Migrations completed successfully!"
+fi
+
 # 2. Find the ID of the currently running container (Old)
 OLD_CONTAINER=$(docker ps --filter "label=com.docker.compose.service=$SERVICE" --filter "status=running" -q | head -n 1)
 

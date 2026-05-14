@@ -38,7 +38,7 @@ export function DashboardTable({
       key: 'institutionType', 
       label: 'Type',
       render: (app) => (
-        <span className="capitalize text-slate-600">
+        <span className="capitalize text-muted-foreground">
           {app.institutionType.toLowerCase().replace('_', ' ')}
         </span>
       )
@@ -51,7 +51,7 @@ export function DashboardTable({
     { 
       key: 'date', 
       label: 'Submitted',
-      className: 'text-slate-500',
+      className: 'text-muted-foreground',
       render: (app) => {
         const date = app.submittedAt || app.createdAt;
         return date ? new Intl.DateTimeFormat('en-GB', { 
@@ -89,7 +89,7 @@ export function DashboardTable({
             <Button 
               variant="outline" 
               size="sm"
-              className="!h-8 !py-0 text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 shadow-none"
+              className="!h-8 !py-0 text-green-600 dark:text-green-400 hover:bg-green-600/10 border-green-600/20 shadow-none"
               onClick={() => onApprove(app.id)}
             >
               <CheckCircle2 className="mr-1.5 h-3 w-3" />
@@ -145,7 +145,7 @@ export function DashboardTable({
   } = useDataTable(applications, {
     searchKey: 'institutionName',
     filters,
-    initialPageSize: 10
+    initialPageSize: 5
   });
 
   return (

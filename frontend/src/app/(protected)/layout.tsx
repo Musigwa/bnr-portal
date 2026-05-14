@@ -63,7 +63,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                 {pathname.match(/\/applications\/[a-zA-Z0-9-]+/) && !pathname.includes('/new') && (
                   <>
                     <ChevronRight className="h-4 w-4" />
-                    <span className="text-slate-900 font-medium">{pathname.split('/').pop()}</span>
+                    <span className="text-slate-900 font-medium capitalize">
+                      {pathname.endsWith('/edit') ? 'Edit Application' : pathname.split('/').pop()}
+                    </span>
                   </>
                 )}
               </div>
