@@ -5,6 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGetApplications } from '@/hooks/api/use-applications';
 import { useAuth } from '@/providers/auth.provider';
+import { useTableQuery } from '@/hooks/use-table-query';
 import { Role } from '@/types';
 import { AlertCircle, Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -12,7 +13,16 @@ import { ApplicationTable } from './_components/application-table';
 
 export default function ApplicationsPage() {
   const { user } = useAuth();
-  const { data: applications, isLoading, error, refetch } = useGetApplications();
+  const { query, setQuery } = useTableQuery();
+  
+  const { data: response, isLoading, error, refetch } = useGetApplications({
+    page: query.page,
+    limit: query.limit,
+    searchQuery: query.searchQuery,
+    searchFields: query.searchFields,
+    status: query.status,
+    institutionType: query.institutionType,
+  });
 
   if (isLoading) {
     return (
@@ -44,6 +54,9 @@ export default function ApplicationsPage() {
     );
   }
 
+  const applications = response?.data || [];
+  const meta = response?.meta || { total: 0, page: 1, limit: 10, totalPages: 0 };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -59,8 +72,32 @@ export default function ApplicationsPage() {
       </div>
       
       <ApplicationTable 
-        applications={applications || []}
+        applications={applications}
         role={user?.role || Role.APPLICANT}
+        
+        // Pagination
+        currentPage={meta.page}
+        totalPages={meta.totalPages}
+        totalResults={meta.total}
+        pageSize={meta.limit}
+        onPageChange={(page) => setQuery({ page })}
+        onPageSizeChange={(limit) => setQuery({ limit, page: 1 })}
+        
+        // Search
+        searchQuery={query.searchQuery}
+        onSearchChange={(searchQuery) => setQuery({ searchQuery, page: 1 })}
+        
+        // Filters
+        activeFilters={{
+          status: query.status || 'all',
+          institutionType: query.institutionType || 'all',
+        }}
+        onFilterChange={(key, value) => {
+          setQuery({ [key]: value !== 'all' ? value : undefined, page: 1 });
+        }}
+        onClearFilters={() => {
+          setQuery({ status: undefined, institutionType: undefined, searchQuery: '', page: 1 });
+        }}
       />
     </div>
   );

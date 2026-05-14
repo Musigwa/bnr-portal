@@ -9,8 +9,8 @@ import { AlertCircle } from 'lucide-react';
 import { ApplicationStatus } from '@/types';
 
 export default function EditApplicationPage() {
-  const { id } = useParams() as { id: string };
-  const { data: application, isLoading, error } = useGetApplicationById(id);
+  const { identifier } = useParams() as { identifier: string };
+  const { data: application, isLoading, error } = useGetApplicationById(identifier);
 
   if (isLoading) {
     return (
@@ -33,13 +33,15 @@ export default function EditApplicationPage() {
     );
   }
 
-  if (application.status !== ApplicationStatus.DRAFT) {
+  const editableStatuses = [ApplicationStatus.DRAFT, ApplicationStatus.PENDING_INFO];
+  
+  if (!editableStatuses.includes(application.status)) {
     return (
       <div className="max-w-3xl mx-auto">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Action Denied</AlertTitle>
-          <AlertDescription>Only draft applications can be edited.</AlertDescription>
+          <AlertDescription>Applications can only be edited when they are in Draft or Pending Information state.</AlertDescription>
         </Alert>
       </div>
     );
@@ -52,7 +54,7 @@ export default function EditApplicationPage() {
         <p className="text-slate-500 mt-2 text-lg font-medium">Update your application details and documents.</p>
       </div>
       
-      <ApplicationForm initialData={application} applicationId={id} />
+      <ApplicationForm initialData={application} applicationId={identifier} />
     </div>
   );
 }

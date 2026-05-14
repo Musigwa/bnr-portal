@@ -15,15 +15,16 @@ export default function DashboardPage() {
   const { mutateAsync: approveApp } = useApproveApplication();
 
   const counts = useMemo(() => {
-    if (!applications) return { total: 0, pending: 0, awaitingDecision: 0, decidedThisMonth: 0 };
+    const data = applications?.data || [];
+    if (!data.length) return { total: 0, pending: 0, awaitingDecision: 0, decidedThisMonth: 0 };
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     return {
-      total: applications.length,
-      pending: applications.filter(a => a.status === ApplicationStatus.SUBMITTED).length,
-      awaitingDecision: applications.filter(a => a.status === ApplicationStatus.REVIEWED).length,
-      decidedThisMonth: applications.filter(a => {
+      total: data.length,
+      pending: data.filter(a => a.status === ApplicationStatus.SUBMITTED).length,
+      awaitingDecision: data.filter(a => a.status === ApplicationStatus.REVIEWED).length,
+      decidedThisMonth: data.filter(a => {
         if (!a.updatedAt) return false;
         return new Date(a.updatedAt) >= startOfMonth && 
                (a.status === ApplicationStatus.APPROVED || a.status === ApplicationStatus.REJECTED);
@@ -69,7 +70,7 @@ export default function DashboardPage() {
 
       <div className="pt-4">
         <DashboardTable 
-          applications={applications || []}
+          applications={applications?.data || []}
           userRole={user?.role || Role.APPLICANT}
           isLoading={isLoading}
           onAssign={handleAssign}

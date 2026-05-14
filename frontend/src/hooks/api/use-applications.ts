@@ -9,10 +9,10 @@ export const APPLICATION_KEYS = {
   audit: (id: string) => [...APPLICATION_KEYS.details(id), 'audit'] as const,
 };
 
-export function useGetApplications() {
-  return useQuery<Application[]>({
-    queryKey: APPLICATION_KEYS.lists(),
-    queryFn: () => apiClient.get('/applications'),
+export function useGetApplications(params: Record<string, any> = {}) {
+  return useQuery<{ data: Application[]; meta: { total: number; page: number; limit: number; totalPages: number } }>({
+    queryKey: [...APPLICATION_KEYS.lists(), params],
+    queryFn: () => apiClient.get('/applications', params),
   });
 }
 
@@ -66,7 +66,7 @@ export function useSubmitApplication() {
 export function useCreateApplication() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<Application>) => apiClient.post<{ id: string }>('/applications', data),
+    mutationFn: (data: Partial<Application>) => apiClient.post<Application>('/applications', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
     },
@@ -110,7 +110,7 @@ export function useUpdateApplication() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string, data: Partial<Application> }) => 
-      apiClient.patch(`/applications/${id}`, data),
+      apiClient.patch<Application>(`/applications/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
     },
@@ -123,6 +123,17 @@ export function useResubmitApplication() {
     mutationFn: (id: string) => apiClient.post(`/applications/${id}/resubmit`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.all });
+    },
+  });
+}
+
+export function useDeleteDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ applicationId, documentId }: { applicationId: string, documentId: string }) => 
+      apiClient.delete(`/applications/${applicationId}/documents/${documentId}`),
+    onSuccess: (_, { applicationId }) => {
+      queryClient.invalidateQueries({ queryKey: APPLICATION_KEYS.details(applicationId) });
     },
   });
 }

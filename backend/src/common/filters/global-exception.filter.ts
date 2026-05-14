@@ -6,6 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { logForensic } from '../utils/forensic-logger';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -26,6 +27,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (status === 500) {
       console.error('Unhandled Exception:', exception);
+      logForensic('Unhandled Exception caught by GlobalFilter', exception);
     }
 
     response.status(status).json({

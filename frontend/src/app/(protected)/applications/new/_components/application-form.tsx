@@ -8,14 +8,21 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { FieldErrors, ResolverResult, useForm, useWatch } from 'react-hook-form';
 import * as z from 'zod';
-import { useCreateApplication, useSubmitApplication, useUpdateApplication } from '@/hooks/api/use-applications';
+import { useCreateApplication, useSubmitApplication, useUpdateApplication, useDeleteDocument } from '@/hooks/api/use-applications';
 import { Application } from '@/types';
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2, Upload, FileText, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const institutionTypeLabels: Record<string, string> = {
+  'COMMERCIAL_BANK': 'Commercial Bank',
+  'MICROFINANCE': 'Microfinance',
+  'DIGITAL_BANK': 'Digital Bank',
+};
 
 const formSchema = z.object({
   institutionName: z.string().min(1, 'Institution name is required'),
@@ -35,6 +42,7 @@ interface ApplicationFormProps {
 export function ApplicationForm({ initialData, applicationId }: ApplicationFormProps) {
   const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
+  const [existingDocs, setExistingDocs] = useState(initialData?.documents || []);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   const {
@@ -44,7 +52,7 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
     handleSubmit,
     formState: { errors, isValid },
   } = useForm<FormValues>({
-    mode: 'onChange',
+    mode: 'all',
     resolver: async (values) => {
       const result = formSchema.safeParse(values);
       if (result.success) {
@@ -60,13 +68,13 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
         };
       });
       
-      return { values: {}, errors: errors as unknown as FieldErrors<FormValues> } as ResolverResult<FormValues>;
+      return { values, errors: errors as unknown as FieldErrors<FormValues> } as ResolverResult<FormValues>;
     },
-    defaultValues: {
+    values: {
       institutionName: initialData?.institutionName || '',
       institutionType: initialData?.institutionType || '',
       registrationNumber: initialData?.registrationNumber || '',
-      proposedCapital: initialData?.proposedCapital,
+      proposedCapital: initialData?.proposedCapital ? Number(initialData.proposedCapital) : 0,
       applicantNotes: initialData?.applicantNotes || '',
     },
   });
@@ -77,35 +85,49 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
   const { mutateAsync: createDraft } = useCreateApplication();
   const { mutateAsync: updateApp } = useUpdateApplication();
   const { mutateAsync: submitApp } = useSubmitApplication();
+  const { mutateAsync: deleteDoc } = useDeleteDocument();
 
-  const handleFormSubmit = async (data: FormValues) => {
+  const handleFormSubmit = async (data: FormValues, shouldSubmit = false) => {
     setSubmissionError(null);
     setIsLoading(true);
     try {
-      let appId = applicationId;
+      let currentAppId = applicationId;
+      let currentRefNumber = initialData?.refNumber;
 
-      if (appId) {
+      if (currentAppId) {
         // Update existing draft
-        await updateApp({ id: appId, data });
+        const res = await updateApp({ id: currentAppId, data });
+        currentRefNumber = res.refNumber;
       } else {
         // 1. Create Draft
         const res = await createDraft(data);
-        appId = res.id;
+        currentAppId = res.id;
+        currentRefNumber = res.refNumber;
       }
 
-      // 2. Upload files (if any)
+      // 2. Upload new files (if any)
       if (files.length > 0) {
         for (const file of files) {
           const formData = new FormData();
           formData.append('file', file);
-          await apiClient.upload(`/applications/${appId}/documents`, formData);
+          await apiClient.upload(`/applications/${currentAppId}/documents`, formData);
         }
       }
 
-      // 3. Submit
-      await submitApp(appId);
-      
-      router.push('/applications');
+      // 3. Conditional Submit
+      if (shouldSubmit) {
+        await submitApp(currentAppId);
+        router.push('/applications');
+      } else {
+        // If it's just a save, stay or go to details
+        if (!applicationId) {
+          // If it was new, go to the new draft's detail page
+          router.push(`/applications/${currentRefNumber}`);
+        } else {
+          // If it was already an edit, just go back to details
+          router.push(`/applications/${currentRefNumber}`);
+        }
+      }
     } catch (error: unknown) {
       const err = error as { message?: string };
       setSubmissionError(err.message || 'An error occurred during submission.');
@@ -115,7 +137,7 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
   };
 
   const onSubmit = (data: FormValues) => {
-    handleFormSubmit(data);
+    handleFormSubmit(data, true);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,6 +173,21 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const removeExistingDoc = async (docId: string) => {
+    const doc = existingDocs.find(d => d.id === docId);
+    if (!doc) return;
+
+    if (confirm(`Are you sure you want to permanently delete "${doc.fileName}"? This action cannot be undone.`)) {
+      try {
+        await deleteDoc({ applicationId: applicationId!, documentId: docId });
+        setExistingDocs((prev) => prev.filter((d) => d.id !== docId));
+      } catch (error) {
+        alert('Failed to delete document. Please try again.');
+        console.error(error);
+      }
+    }
+  };
+
   return (
     <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }}>
       <Card className="shadow-md border-slate-200">
@@ -162,6 +199,20 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
           {submissionError && (
             <Alert variant="destructive">
               <AlertDescription>{submissionError}</AlertDescription>
+            </Alert>
+          )}
+
+          {Object.keys(errors).length > 0 && (
+            <Alert variant="destructive" className="bg-red-50 border-red-200">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertTitle className="text-red-800 font-bold">Form Validation Error</AlertTitle>
+              <AlertDescription className="text-red-700 mt-1">
+                <ul className="list-disc list-inside space-y-1">
+                  {Object.entries(errors).map(([key, error]) => (
+                    <li key={key}>{error?.message}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
             </Alert>
           )}
 
@@ -185,7 +236,9 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
                 value={institutionType ?? undefined}
               >
                 <SelectTrigger className={errors.institutionType ? 'border-red-500 bg-red-50/50' : ''}>
-                  <SelectValue placeholder="Select institution type" />
+                  <SelectValue placeholder="Select institution type">
+                    {institutionType ? institutionTypeLabels[institutionType] : undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent sideOffset={4}>
                   <SelectItem value="COMMERCIAL_BANK">Commercial Bank</SelectItem>
@@ -231,7 +284,10 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
                 id="applicantNotes"
                 placeholder="Add any additional context or notes regarding this application..."
                 {...register('applicantNotes')}
-                className={errors.applicantNotes ? 'border-red-500 bg-red-50/50' : ''}
+                className={cn(
+                  errors.applicantNotes ? 'border-red-500 bg-red-50/50' : '',
+                  'min-h-[120px]'
+                )}
               />
               {errors.applicantNotes && (
                 <p className="text-sm text-red-500 font-medium">{errors.applicantNotes.message}</p>
@@ -248,7 +304,7 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
                 onDrop={handleDrop}
                 onClick={() => document.getElementById('fileInput')?.click()}
               >
-                {files.length === 0 ? (
+                {files.length === 0 && existingDocs.length === 0 ? (
                   <>
                     <Upload className="h-6 w-6 text-primary mb-2" />
                     <p className="mt-1 text-sm font-medium text-slate-700">
@@ -267,8 +323,33 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
                       className="w-full flex flex-wrap gap-3 cursor-default" 
                       onClick={(e) => e.stopPropagation()}
                     >
+                      {/* Existing Documents */}
+                      {existingDocs.map((doc) => (
+                        <div key={doc.id} className="relative group flex flex-col items-center justify-center w-28 h-28 border border-primary/20 rounded-xl bg-primary/5 shadow-sm overflow-hidden hover:border-primary transition-all">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeExistingDoc(doc.id);
+                            }}
+                            className="absolute top-1 right-1 bg-white shadow-sm border text-red-500 hover:bg-red-50 hover:text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                          </button>
+                          <div className="flex-1 flex items-center justify-center w-full bg-primary/10">
+                            <FileText className="h-8 w-8 text-primary" />
+                          </div>
+                          <div className="w-full px-2 py-1.5 bg-white border-t border-slate-100 text-center">
+                            <p className="text-[11px] font-medium text-slate-700 truncate" title={doc.fileName}>
+                              {doc.fileName}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* New Files */}
                       {files.map((file, index) => (
-                        <div key={index} className="relative group flex flex-col items-center justify-center w-28 h-28 border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden hover:border-primary transition-all">
+                        <div key={`new-${index}`} className="relative group flex flex-col items-center justify-center w-28 h-28 border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden hover:border-primary transition-all">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -304,15 +385,26 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex items-center justify-end bg-slate-50/50 border-t py-4 px-6">
+        <CardFooter className="flex items-center justify-between bg-slate-50/50 border-t py-4 px-6">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => router.back()}
+            disabled={isLoading}
+            className="text-slate-500 hover:text-slate-700"
+          >
+            Cancel
+          </Button>
           <div className="flex items-center gap-3">
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
-              disabled={isLoading}
+              onClick={() => handleSubmit((data) => handleFormSubmit(data, false))()}
+              disabled={isLoading || !isValid}
+              className="bg-white"
             >
-              Cancel
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save as Draft
             </Button>
             <Button
               type="submit"
@@ -320,7 +412,7 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
               className="px-8 shadow-sm font-semibold"
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLoading ? 'Submitting...' : 'Submit Application'}
+              {isLoading ? 'Submitting...' : (applicationId ? 'Save & Submit' : 'Submit Application')}
             </Button>
           </div>
         </CardFooter>
