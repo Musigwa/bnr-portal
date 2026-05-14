@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
-import { ApplicationStatus, Role, User } from '@prisma/client';
+import { ApplicationStatus, Role, User, Document } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -95,16 +95,15 @@ export class DocumentsService {
     });
 
     // Group by filename: current + history
-    const grouped = documents.reduce(
-      (acc, doc) => {
-        if (!acc[doc.fileName])
-          acc[doc.fileName] = { current: null, history: [] };
-        if (!doc.isSuperseded) acc[doc.fileName].current = doc;
-        else acc[doc.fileName].history.push(doc);
-        return acc;
-      },
-      {} as Record<string, { current: any; history: any[] }>,
-    );
+    const grouped = documents.reduce<
+      Record<string, { current: Document | null; history: Document[] }>
+    >((acc, doc) => {
+      if (!acc[doc.fileName])
+        acc[doc.fileName] = { current: null, history: [] };
+      if (!doc.isSuperseded) acc[doc.fileName].current = doc;
+      else acc[doc.fileName].history.push(doc);
+      return acc;
+    }, {});
 
     return Object.values(grouped);
   }

@@ -97,9 +97,11 @@ async function request<T>(
     headers,
   });
 
-  if (res.status === 401 && retry) {
+  const isLoginRequest = endpoint === '/auth/login';
+
+  if (res.status === 401 && retry && !isLoginRequest) {
     accessToken = null;
-    await getValidToken();
+    await getValidToken().catch(() => null);
     return request<T>(endpoint, options, false);
   }
 

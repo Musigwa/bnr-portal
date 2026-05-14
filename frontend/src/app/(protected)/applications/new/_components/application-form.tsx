@@ -1,0 +1,330 @@
+'use client';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { apiClient } from '@/lib/api-client';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { FieldErrors, ResolverResult, useForm, useWatch } from 'react-hook-form';
+import * as z from 'zod';
+import { useCreateApplication, useSubmitApplication, useUpdateApplication } from '@/hooks/api/use-applications';
+import { Application } from '@/types';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2, Upload } from 'lucide-react';
+
+const formSchema = z.object({
+  institutionName: z.string().min(1, 'Institution name is required'),
+  institutionType: z.string().min(1, 'Institution type is required'),
+  registrationNumber: z.string().min(1, 'Registration number is required'),
+  proposedCapital: z.number().min(1, 'Proposed capital must be greater than 0'),
+  applicantNotes: z.string().optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+interface ApplicationFormProps {
+  initialData?: Application;
+  applicationId?: string;
+}
+
+export function ApplicationForm({ initialData, applicationId }: ApplicationFormProps) {
+  const router = useRouter();
+  const [files, setFiles] = useState<File[]>([]);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+
+  const {
+    register,
+    setValue,
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm<FormValues>({
+    mode: 'onChange',
+    resolver: async (values) => {
+      const result = formSchema.safeParse(values);
+      if (result.success) {
+        return { values: result.data, errors: {} };
+      }
+      
+      const errors: Record<string, { type: string; message: string }> = {};
+      result.error.issues.forEach((issue) => {
+        const path = issue.path.join('.');
+        errors[path] = {
+          type: issue.code,
+          message: issue.message,
+        };
+      });
+      
+      return { values: {}, errors: errors as unknown as FieldErrors<FormValues> } as ResolverResult<FormValues>;
+    },
+    defaultValues: {
+      institutionName: initialData?.institutionName || '',
+      institutionType: initialData?.institutionType || '',
+      registrationNumber: initialData?.registrationNumber || '',
+      proposedCapital: initialData?.proposedCapital,
+      applicantNotes: initialData?.applicantNotes || '',
+    },
+  });
+
+  const institutionType = useWatch({ control, name: 'institutionType' });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const { mutateAsync: createDraft } = useCreateApplication();
+  const { mutateAsync: updateApp } = useUpdateApplication();
+  const { mutateAsync: submitApp } = useSubmitApplication();
+
+  const handleFormSubmit = async (data: FormValues) => {
+    setSubmissionError(null);
+    setIsLoading(true);
+    try {
+      let appId = applicationId;
+
+      if (appId) {
+        // Update existing draft
+        await updateApp({ id: appId, data });
+      } else {
+        // 1. Create Draft
+        const res = await createDraft(data);
+        appId = res.id;
+      }
+
+      // 2. Upload files (if any)
+      if (files.length > 0) {
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append('file', file);
+          await apiClient.upload(`/applications/${appId}/documents`, formData);
+        }
+      }
+
+      // 3. Submit
+      await submitApp(appId);
+      
+      router.push('/applications');
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      setSubmissionError(err.message || 'An error occurred during submission.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onSubmit = (data: FormValues) => {
+    handleFormSubmit(data);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      const validFiles = newFiles.filter(file => {
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`File ${file.name} exceeds 5MB limit.`);
+          return false;
+        }
+        return true;
+      });
+      setFiles((prev) => [...prev, ...validFiles]);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.dataTransfer.files) {
+      const newFiles = Array.from(e.dataTransfer.files);
+      const validFiles = newFiles.filter(file => {
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`File ${file.name} exceeds 5MB limit.`);
+          return false;
+        }
+        return true;
+      });
+      setFiles((prev) => [...prev, ...validFiles]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }}>
+      <Card className="shadow-md border-slate-200">
+        <CardHeader className="bg-slate-50/50 border-b pb-4 pt-5">
+          <CardTitle className="text-xl">Application Form</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6 space-y-6">
+          
+          {submissionError && (
+            <Alert variant="destructive">
+              <AlertDescription>{submissionError}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="institutionName" className="text-slate-700">Institution Name <span className="text-red-500">*</span></Label>
+              <Input
+                id="institutionName"
+                placeholder="e.g. Kigali Commercial Bank"
+                {...register('institutionName')}
+                className={errors.institutionName ? 'border-red-500 bg-red-50/50' : ''}
+              />
+              {errors.institutionName && (
+                <p className="text-sm text-red-500 font-medium">{errors.institutionName.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="institutionType" className="text-slate-700">Institution Type <span className="text-red-500">*</span></Label>
+              <Select
+                onValueChange={(value) => setValue('institutionType', value ?? '')}
+                value={institutionType ?? undefined}
+              >
+                <SelectTrigger className={errors.institutionType ? 'border-red-500 bg-red-50/50' : ''}>
+                  <SelectValue placeholder="Select institution type" />
+                </SelectTrigger>
+                <SelectContent sideOffset={4}>
+                  <SelectItem value="COMMERCIAL_BANK">Commercial Bank</SelectItem>
+                  <SelectItem value="MICROFINANCE">Microfinance</SelectItem>
+                  <SelectItem value="DIGITAL_BANK">Digital Bank</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.institutionType && (
+                <p className="text-sm text-red-500 font-medium">{errors.institutionType.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="registrationNumber" className="text-slate-700">Registration Number <span className="text-red-500">*</span></Label>
+              <Input
+                id="registrationNumber"
+                placeholder="e.g. RDB-2026-001"
+                {...register('registrationNumber')}
+                className={errors.registrationNumber ? 'border-red-500 bg-red-50/50' : ''}
+              />
+              {errors.registrationNumber && (
+                <p className="text-sm text-red-500 font-medium">{errors.registrationNumber.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="proposedCapital" className="text-slate-700">Proposed Capital (RWF) <span className="text-red-500">*</span></Label>
+              <Input
+                id="proposedCapital"
+                type="number"
+                placeholder="e.g. 5000000"
+                {...register('proposedCapital', { valueAsNumber: true })}
+                className={errors.proposedCapital ? 'border-red-500 bg-red-50/50' : ''}
+              />
+              {errors.proposedCapital && (
+                <p className="text-sm text-red-500 font-medium">{errors.proposedCapital.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="applicantNotes" className="text-slate-700">Applicant Notes (Optional)</Label>
+              <Textarea
+                id="applicantNotes"
+                placeholder="Add any additional context or notes regarding this application..."
+                {...register('applicantNotes')}
+                className={errors.applicantNotes ? 'border-red-500 bg-red-50/50' : ''}
+              />
+              {errors.applicantNotes && (
+                <p className="text-sm text-red-500 font-medium">{errors.applicantNotes.message}</p>
+              )}
+            </div>
+
+            <div className="flex flex-col space-y-2">
+              <Label className="text-slate-700">Documents</Label>
+              <div
+                className={`flex-1 flex flex-col border-2 border-dashed border-slate-300 rounded-xl p-5 hover:bg-slate-50 transition-colors cursor-pointer ${
+                  files.length === 0 ? 'items-center justify-center text-center' : ''
+                }`}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById('fileInput')?.click()}
+              >
+                {files.length === 0 ? (
+                  <>
+                    <Upload className="h-6 w-6 text-primary mb-2" />
+                    <p className="mt-1 text-sm font-medium text-slate-700">
+                      Drag and drop files here, or click to select
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Max file size: 5MB per document
+                    </p>
+                  </>
+                ) : (
+                  <div className="w-full">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-sm font-semibold text-slate-700">Selected Files</span>
+                    </div>
+                    <div 
+                      className="w-full flex flex-wrap gap-3 cursor-default" 
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {files.map((file, index) => (
+                        <div key={index} className="relative group flex flex-col items-center justify-center w-28 h-28 border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden hover:border-primary transition-all">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeFile(index);
+                            }}
+                            className="absolute top-1 right-1 bg-white shadow-sm border text-red-500 hover:bg-red-50 hover:text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                          </button>
+                          <div className="flex-1 flex items-center justify-center w-full bg-slate-50/50 group-hover:bg-primary/5 transition-colors">
+                            <svg className="w-8 h-8 text-slate-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                          </div>
+                          <div className="w-full px-2 py-1.5 bg-white border-t border-slate-100 text-center">
+                            <p className="text-[11px] font-medium text-slate-700 truncate" title={file.name}>
+                              {file.name}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      <div 
+                        className="flex flex-col items-center justify-center w-28 h-28 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 hover:bg-slate-100 hover:border-primary cursor-pointer transition-colors"
+                        onClick={() => document.getElementById('fileInput')?.click()}
+                      >
+                        <Upload className="h-5 w-5 text-slate-400 mb-1" />
+                        <span className="text-[11px] font-medium text-slate-500">Add More</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <input id="fileInput" type="file" multiple className="hidden" onChange={handleFileChange} />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex items-center justify-end bg-slate-50/50 border-t py-4 px-6">
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading || !isValid}
+              className="px-8 shadow-sm font-semibold"
+            >
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading ? 'Submitting...' : 'Submit Application'}
+            </Button>
+          </div>
+        </CardFooter>
+      </Card>
+    </form>
+  );
+}
