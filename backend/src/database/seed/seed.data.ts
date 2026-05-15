@@ -3,26 +3,26 @@ import { Role, ApplicationStatus } from '@prisma/client';
 export const SEED_USERS = [
   {
     email: 'admin@bnr.rw',
-    password: 'Admin@1234',
-    fullName: 'BNR Admin',
+    password: 'Admin@Portal2026',
+    fullName: 'BNR System Administrator',
     role: Role.ADMIN,
   },
   {
-    email: 'applicant@example.com',
-    password: 'Test@1234',
-    fullName: 'Jane Applicant',
+    email: 'alice.uwera@kcb.rw',
+    password: 'KCB@Portal2026',
+    fullName: 'Alice Uwera',
     role: Role.APPLICANT,
   },
   {
-    email: 'reviewer@bnr.rw',
-    password: 'Test@1234',
-    fullName: 'John Reviewer',
+    email: 'jp.habimana@bnr.rw',
+    password: 'BNR@Portal2026',
+    fullName: 'Jean-Pierre Habimana',
     role: Role.REVIEWER,
   },
   {
-    email: 'approver@bnr.rw',
-    password: 'Test@1234',
-    fullName: 'Mary Approver',
+    email: 'mc.mutoni@bnr.rw',
+    password: 'BNR@Portal2026',
+    fullName: 'Marie-Claire Mutoni',
     role: Role.APPROVER,
   },
 ];
@@ -36,8 +36,8 @@ export const SEED_APPLICATIONS = [
     registrationNumber: 'RDB-2026-001',
     proposedCapital: 5000000,
     applicantNotes: 'Initial application for commercial banking license.',
-    reviewerEmail: 'reviewer@bnr.rw',
-    applicantEmail: 'applicant@example.com',
+    reviewerEmail: 'jp.habimana@bnr.rw',
+    applicantEmail: 'alice.uwera@kcb.rw',
   },
   {
     refNumber: 'BNR-2026-0002',
@@ -48,7 +48,7 @@ export const SEED_APPLICATIONS = [
     proposedCapital: 1000000,
     applicantNotes: 'Application for microfinance institution license.',
     reviewerNotes: 'All documents verified. Recommended for approval.',
-    reviewerEmail: 'reviewer@bnr.rw',
-    applicantEmail: 'applicant@example.com',
+    reviewerEmail: 'jp.habimana@bnr.rw',
+    applicantEmail: 'alice.uwera@kcb.rw',
   },
 ];

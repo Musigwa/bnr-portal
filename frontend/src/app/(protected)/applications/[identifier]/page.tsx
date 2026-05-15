@@ -56,12 +56,10 @@ export default function ApplicationDetailsPage() {
     }
   };
 
-  // 1. Fetch Application & Audit
-  const { data: app, isLoading, error } = useGetApplicationById(identifier);
-  const isInternal = user?.role !== 'APPLICANT';
+  const { data: app, isLoading: appLoading, isError } = useGetApplicationById(identifier);
   const { data: auditLogs } = useGetApplicationAudit(identifier);
+  const isInternal = user?.role !== 'APPLICANT';
 
-  // Mutations
   const { mutateAsync: assignApp } = useAssignApplication();
   const { mutateAsync: approveApp } = useApproveApplication();
   const { mutateAsync: requestInfo } = useRequestInfo();
@@ -70,7 +68,7 @@ export default function ApplicationDetailsPage() {
   const { mutateAsync: submitApp } = useSubmitApplication();
   const { mutateAsync: resubmit } = useResubmitApplication();
 
-  if (isLoading) {
+  if (appLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-10 w-48" />
@@ -82,7 +80,7 @@ export default function ApplicationDetailsPage() {
     );
   }
 
-  if (error || !app) {
+  if (isError || !app) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
@@ -331,7 +329,7 @@ export default function ApplicationDetailsPage() {
             <CardContent>
               <DocumentList 
                 documents={app.documents || []} 
-                onDownload={() => { /* Download logic */ }} 
+                onDownload={() => {}} 
               />
             </CardContent>
           </Card>

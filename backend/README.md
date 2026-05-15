@@ -56,12 +56,12 @@ POST /database/seed
 
 ### Seed Credentials (Dev)
 
-| Role      | Email                 | Password   |
-| --------- | --------------------- | ---------- |
-| ADMIN     | admin@bnr.rw          | Admin@1234 |
-| APPLICANT | applicant@example.com | Test@1234  |
-| REVIEWER  | reviewer@bnr.rw       | Test@1234  |
-| APPROVER  | approver@bnr.rw       | Test@1234  |
+| Role      | Email               | Password           |
+| --------- | ------------------- | ------------------ |
+| ADMIN     | admin@bnr.rw        | Admin@Portal2026   |
+| APPLICANT | alice.uwera@kcb.rw  | KCB@Portal2026     |
+| REVIEWER  | jp.habimana@bnr.rw  | BNR@Portal2026     |
+| APPROVER  | mc.mutoni@bnr.rw    | BNR@Portal2026     |
 
 ## Running Tests
 
