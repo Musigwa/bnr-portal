@@ -61,7 +61,7 @@ export default function ApplicationsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">My Applications</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">My Applications</h1>
           <p className="text-muted-foreground mt-1 text-lg">
             Manage and track your bank licensing applications.
           </p>

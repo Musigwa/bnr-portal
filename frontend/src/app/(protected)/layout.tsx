@@ -40,9 +40,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/70 backdrop-blur-md supports-[backdrop-filter]:bg-white/50">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/70 backdrop-blur-md supports-[backdrop-filter]:bg-background/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Link href={rootHref} className="text-xl font-bold text-primary tracking-tight mr-4">BNR Portal</Link>
@@ -51,19 +51,19 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             {!hasMultipleRoots && !isRoot && (
               <div className="hidden md:flex items-center space-x-2 text-sm text-muted-foreground">
                 <ChevronRight className="h-4 w-4" />
-                <Link href={rootHref} className="hover:text-slate-900 transition-colors">
+                <Link href={rootHref} className="hover:text-foreground transition-colors">
                   {rootLabel}
                 </Link>
                 {pathname.includes('/new') && (
                   <>
                     <ChevronRight className="h-4 w-4" />
-                    <span className="text-slate-900 font-medium">New Application</span>
+                    <span className="text-foreground font-medium">New Application</span>
                   </>
                 )}
                 {pathname.match(/\/applications\/[a-zA-Z0-9-]+/) && !pathname.includes('/new') && (
                   <>
                     <ChevronRight className="h-4 w-4" />
-                    <span className="text-slate-900 font-medium capitalize">
+                    <span className="text-foreground font-medium capitalize">
                       {pathname.endsWith('/edit') ? 'Edit Application' : pathname.split('/').pop()}
                     </span>
                   </>
@@ -82,8 +82,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                       href={item.href}
                       className={`px-3 py-2 rounded-md text-sm transition-colors ${
                         isActive
-                          ? 'bg-slate-100/80 text-slate-900 font-medium'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50/50'
+                          ? 'bg-muted text-foreground font-medium'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                       }`}
                     >
                       {item.label}
@@ -96,7 +96,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           <div className="flex items-center space-x-2">
             <ThemeToggle />
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center justify-center rounded-full cursor-pointer outline-none hover:ring-2 hover:ring-slate-200 hover:ring-offset-2 transition-all">
+              <DropdownMenuTrigger className="flex items-center justify-center rounded-full cursor-pointer outline-none hover:ring-2 hover:ring-border hover:ring-offset-2 transition-all">
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-primary/10 text-primary font-medium">
                     {user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
@@ -118,7 +118,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                   </DropdownMenuLabel>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="text-red-600 cursor-pointer focus:bg-red-50 focus:text-red-600">
+                <DropdownMenuItem onClick={logout} className="text-destructive cursor-pointer focus:bg-destructive/10 focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -135,8 +135,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* Footer */}
-      <footer className="sticky bottom-0 z-50 w-full border-t bg-white/70 backdrop-blur-md supports-[backdrop-filter]:bg-white/50">
-        <div className="container mx-auto px-4 h-14 flex items-center justify-center text-xs text-slate-500">
+      <footer className="sticky bottom-0 z-50 w-full border-t bg-background/70 backdrop-blur-md supports-[backdrop-filter]:bg-background/50">
+        <div className="container mx-auto px-4 h-14 flex items-center justify-center text-xs text-muted-foreground">
           &copy; {new Date().getFullYear()} National Bank of Rwanda. All rights reserved.
         </div>
       </footer>

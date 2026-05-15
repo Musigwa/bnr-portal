@@ -187,9 +187,8 @@ export function ApplicationForm({ initialData, applicationId }: ApplicationFormP
       try {
         await deleteDoc({ applicationId: applicationId!, documentId: docId });
         setExistingDocs((prev) => prev.filter((d) => d.id !== docId));
-      } catch (error) {
-        alert('Failed to delete document. Please try again.');
-        console.error(error);
+      } catch {
+        // Error is handled by the hook's centralized notification
       }
     }
   };

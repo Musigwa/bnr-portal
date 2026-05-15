@@ -50,8 +50,8 @@ export default function EditApplicationPage() {
   return (
     <div className="max-w-3xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Edit Application</h1>
-        <p className="text-slate-500 mt-2 text-lg font-medium">Update your application details and documents.</p>
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Edit Application</h1>
+        <p className="text-muted-foreground mt-2 text-lg font-medium">Update your application details and documents.</p>
       </div>
       
       <ApplicationForm initialData={application} applicationId={identifier} />

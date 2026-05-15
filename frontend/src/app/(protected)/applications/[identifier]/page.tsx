@@ -331,7 +331,7 @@ export default function ApplicationDetailsPage() {
             <CardContent>
               <DocumentList 
                 documents={app.documents || []} 
-                onDownload={(id) => console.log('Download', id)} 
+                onDownload={() => { /* Download logic */ }} 
               />
             </CardContent>
           </Card>

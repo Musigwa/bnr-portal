@@ -50,8 +50,8 @@ export function ActionDialog({
       await onConfirm(note);
       setNote('');
       onOpenChange(false);
-    } catch (error) {
-      console.error('Action failed:', error);
+    } catch {
+      // Error is handled by the caller or notification system
     } finally {
       setIsLoading(false);
     }
@@ -62,22 +62,22 @@ export function ActionDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">{title}</DialogTitle>
-          <DialogDescription className="pt-2 text-slate-500">
+          <DialogDescription className="pt-2 text-muted-foreground">
             {description}
           </DialogDescription>
         </DialogHeader>
 
         {requireNote && (
           <div className="grid gap-3 py-4">
-            <Label htmlFor="note" className="text-sm font-bold text-slate-700 uppercase tracking-tight">
-              {noteLabel} <span className="text-red-500">*</span>
+            <Label htmlFor="note" className="text-sm font-bold text-foreground uppercase tracking-tight">
+              {noteLabel} <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id="note"
               placeholder={notePlaceholder}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="min-h-[140px] border border-slate-200 bg-slate-50/50 focus:bg-white focus-visible:ring-4 focus-visible:ring-primary/10 transition-all resize-none p-4 text-sm shadow-sm"
+              className="min-h-[140px] border border-input bg-muted/50 focus:bg-background focus-visible:ring-4 focus-visible:ring-ring/10 transition-all resize-none p-4 text-sm shadow-sm"
             />
           </div>
         )}
@@ -88,7 +88,7 @@ export function ActionDialog({
             variant="ghost"
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
-            className="font-semibold text-slate-500 hover:text-slate-900"
+            className="font-semibold text-muted-foreground hover:text-foreground"
           >
             {cancelText}
           </Button>
